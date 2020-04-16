@@ -1,0 +1,34 @@
+{
+    "name": "ems-db",
+    "version": "1.0.0",
+    "description": "A database module for the Enquiry Management System",
+    "main": "index.js",
+    "scripts": {
+        "test": "jest --verbose"
+    },
+    "jest": {
+        "testEnvironment": "node",
+        "coveragePathIgnorePatterns": [
+            "/node_modules/"
+        ]
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/PTFS-Europe/ems-db.git"
+    },
+    "author": "Andrew Isherwood <andrew.isherwood@ptfs-europe.com>",
+    "license": "UNLICENSED",
+    "bugs": {
+        "url": "https://github.com/PTFS-Europe/ems-db/issues"
+    },
+    "homepage": "https://github.com/PTFS-Europe/ems-db#readme",
+    "dependencies": {
+        "db-migrate": "^0.11.6",
+        "db-migrate-pg": "^1.0.0",
+        "node-postgres": "^0.1.4",
+        "yargs": "^15.3.1"
+    },
+    "devDependencies": {
+        "jest": "^25.3.0"
+    }
+}

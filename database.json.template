@@ -1,0 +1,33 @@
+{
+    "super": {
+        "driver": "pg",
+        "user": "ems",
+        "password": "",
+    },
+    "test": {
+        "driver": "pg",
+        "database": "ems_test",
+        "user": {
+            "ENV": "PGUSER"
+        },
+        "password": {
+            "ENV": "PGPASSWORD"
+        },
+        "schema": {
+            "ENV": "SCHEMA"
+        }
+    },
+    "dev": {
+        "driver": "pg",
+        "database": "ems",
+        "user": {
+            "ENV": "PGUSER"
+        },
+        "password": {
+            "ENV": "PGPASSWORD"
+        },
+        "schema": {
+            "ENV": "SCHEMA"
+        }
+    }
+}

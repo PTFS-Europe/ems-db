@@ -1,0 +1,9 @@
+DROP TABLE querylabel;
+DROP TABLE userquery;
+DROP TABLE attachment;
+DROP TABLE message;
+DROP TABLE query;
+DROP TABLE ems_user;
+DROP TABLE role;
+DROP TABLE label;
+DROP TABLE folder;
