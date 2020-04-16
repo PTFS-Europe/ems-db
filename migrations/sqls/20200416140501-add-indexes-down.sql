@@ -1,0 +1,1 @@
+DROP INDEX message_created_at_idx;
