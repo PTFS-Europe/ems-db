@@ -1,8 +1,16 @@
 const pool = require('../config');
 
 const messageResolvers = {
-    allMessages: () =>
-        pool.query('SELECT * FROM messages ORDER BY created_at ASC'),
+    allMessages: ({ query }) => {
+        let sql = 'SELECT * FROM message ORDER BY created_at ASC';
+        if (query.offset) {
+            sql += ` OFFSET ${query.offset}`;
+        }
+        if (query.limit) {
+            sql += ` LIMIT ${query.limit}`;
+        }
+        return pool.query(sql);
+    },
     upsertMessage: ({ params, body }) => {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {

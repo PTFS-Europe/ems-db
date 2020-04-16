@@ -16,14 +16,24 @@ jest.mock('../../config', () => ({
 
 describe('Messages', () => {
     describe('allMessages', () => {
-        // Make the call
-        messages.allMessages();
+        // Make the call with no parameters
+        messages.allMessages({ query: {} });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
             done();
         });
         it('should be passed correct SQL', (done) => {
-            expect(pool.query).toBeCalledWith('SELECT * FROM messages');
+            expect(pool.query).toBeCalledWith(
+                'SELECT * FROM message ORDER BY created_at ASC'
+            );
+            done();
+        });
+        // Pass offset and limit parameters
+        messages.allMessages({ query: { offset: 20, limit: 10 } });
+        it('should be passed correct SQL including paramters', (done) => {
+            expect(pool.query).toBeCalledWith(
+                'SELECT * FROM message ORDER BY created_at ASC OFFSET 20 LIMIT 10'
+            );
             done();
         });
     });
