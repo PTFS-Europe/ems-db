@@ -1,7 +1,16 @@
 const pool = require('../config');
 
 const queryResolvers = {
-    allQueries: () => pool.query('SELECT * FROM query'),
+    allQueries: ({ query }) => {
+        let sql = 'SELECT * FROM query ORDER BY updated_at DESC';
+        if (query.offset) {
+            sql += ` OFFSET ${query.offset}`;
+        }
+        if (query.limit) {
+            sql += ` LIMIT ${query.limit}`;
+        }
+        return pool.query(sql);
+    },
     getQuery: ({ params }) =>
         pool.query('SELECT * FROM query WHERE id = $1', [params.id]),
     upsertQuery: ({ params, body }) => {

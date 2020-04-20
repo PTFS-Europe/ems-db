@@ -17,13 +17,23 @@ jest.mock('../../config', () => ({
 describe('Queries', () => {
     describe('allQueries', () => {
         // Make the call
-        queries.allQueries();
+        queries.allQueries({ query: {} });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
             done();
         });
         it('should be passed correct SQL', (done) => {
-            expect(pool.query).toBeCalledWith('SELECT * FROM query');
+            expect(pool.query).toBeCalledWith(
+                'SELECT * FROM query ORDER BY updated_at DESC'
+            );
+            done();
+        });
+        // Pass offset and limit parameters
+        queries.allQueries({ query: { offset: 20, limit: 10 } });
+        it('should be passed correct SQL including paramters', (done) => {
+            expect(pool.query).toBeCalledWith(
+                'SELECT * FROM query ORDER BY updated_at DESC OFFSET 20 LIMIT 10'
+            );
             done();
         });
     });
