@@ -1,0 +1,1 @@
+ALTER TABLE userquery ADD COLUMN filename TEXT;

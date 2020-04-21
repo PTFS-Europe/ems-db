@@ -1,0 +1,1 @@
+ALTER TABLE userquery DROP COLUMN filename;
