@@ -17,7 +17,7 @@ jest.mock('../../config', () => ({
 describe('QueryLabels', () => {
     describe('addLabelToQuery', () => {
         querylabel.addLabelToQuery({
-            body: { query_id: 1, label_id: 2 }
+            params: { query_id: 1, label_id: 2 }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
@@ -35,7 +35,7 @@ describe('QueryLabels', () => {
     });
     describe('removeLabelFromQuery', () => {
         querylabel.removeLabelFromQuery({
-            body: { query_id: 1, label_id: 2 }
+            params: { query_id: 1, label_id: 2 }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();

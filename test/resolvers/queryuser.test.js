@@ -17,7 +17,7 @@ jest.mock('../../config', () => ({
 describe('UserQuery', () => {
     describe('addUserToQuery', () => {
         queryuser.addUserToQuery({
-            body: { query_id: 1, user_id: 2 }
+            params: { query_id: 1, user_id: 2 }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
@@ -35,7 +35,8 @@ describe('UserQuery', () => {
     });
     describe('updateMostRecentSeen', () => {
         queryuser.updateMostRecentSeen({
-            body: { most_recent_seen: 100, query_id: 1, user_id: 2 }
+            params: { query_id: 1, user_id: 2 },
+            body: { most_recent_seen: 100 }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
