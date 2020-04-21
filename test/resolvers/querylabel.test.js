@@ -1,7 +1,7 @@
 // The thing we're testing
-const querylabels = require('../../resolvers/querylabels');
+const querylabel = require('../../resolvers/querylabel');
 
-// The module that querylabels.js depends on (which we're about to mock)
+// The module that querylabel.js depends on (which we're about to mock)
 const pool = require('../../config');
 
 // Mock pool
@@ -16,7 +16,7 @@ jest.mock('../../config', () => ({
 
 describe('QueryLabels', () => {
     describe('addLabelToQuery', () => {
-        querylabels.addLabelToQuery({
+        querylabel.addLabelToQuery({
             body: { query_id: 1, label_id: 2 }
         });
         it('should be called', (done) => {
@@ -34,7 +34,7 @@ describe('QueryLabels', () => {
         });
     });
     describe('removeLabelFromQuery', () => {
-        querylabels.removeLabelFromQuery({
+        querylabel.removeLabelFromQuery({
             body: { query_id: 1, label_id: 2 }
         });
         it('should be called', (done) => {
