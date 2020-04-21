@@ -1,0 +1,1 @@
+ALTER TABLE userquery DROP COLUMN most_recent_seen;
