@@ -1,7 +1,7 @@
 // The thing we're testing
-const userquery = require('../../resolvers/userquery');
+const queryuser = require('../../resolvers/queryuser');
 
-// The module that userquery.js depends on (which we're about to mock)
+// The module that queryuser.js depends on (which we're about to mock)
 const pool = require('../../config');
 
 // Mock pool
@@ -16,7 +16,7 @@ jest.mock('../../config', () => ({
 
 describe('UserQuery', () => {
     describe('addUserToQuery', () => {
-        userquery.addUserToQuery({
+        queryuser.addUserToQuery({
             body: { query_id: 1, user_id: 2 }
         });
         it('should be called', (done) => {
@@ -27,14 +27,14 @@ describe('UserQuery', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'INSERT INTO userquery VALUES ($1, $2, NOW(), NOW(), 0) RETURNING *',
+                'INSERT INTO queryuser VALUES ($1, $2, NOW(), NOW(), 0) RETURNING *',
                 [1, 2]
             );
             done();
         });
     });
     describe('updateMostRecentSeen', () => {
-        userquery.updateMostRecentSeen({
+        queryuser.updateMostRecentSeen({
             body: { most_recent_seen: 100, query_id: 1, user_id: 2 }
         });
         it('should be called', (done) => {
@@ -45,7 +45,7 @@ describe('UserQuery', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'UPDATE userquery SET most_recent_seen = $1 WHERE query_id=$2 AND user_id=$3 RETURNING *',
+                'UPDATE queryuser SET most_recent_seen = $1 WHERE query_id=$2 AND user_id=$3 RETURNING *',
                 [100, 1, 2]
             );
             done();
