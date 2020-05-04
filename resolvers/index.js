@@ -4,6 +4,7 @@ const folders = require('./folders');
 const labels = require('./labels');
 const querylabel = require('./querylabel');
 const queryuser = require('./queryuser');
+const users = require('./users');
 
 module.exports = {
     queries,
@@ -11,5 +12,6 @@ module.exports = {
     folders,
     labels,
     querylabel,
-    queryuser
+    queryuser,
+    users
 };
