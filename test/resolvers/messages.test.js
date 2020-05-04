@@ -24,7 +24,8 @@ describe('Messages', () => {
         });
         it('should be passed correct SQL', (done) => {
             expect(pool.query).toBeCalledWith(
-                'SELECT * FROM message ORDER BY created_at ASC'
+                'SELECT * FROM message ORDER BY created_at ASC',
+                []
             );
             done();
         });
@@ -32,7 +33,17 @@ describe('Messages', () => {
         messages.allMessages({ query: { offset: 20, limit: 10 } });
         it('should be passed correct SQL including paramters', (done) => {
             expect(pool.query).toBeCalledWith(
-                'SELECT * FROM message ORDER BY created_at ASC OFFSET 20 LIMIT 10'
+                'SELECT * FROM message ORDER BY created_at ASC OFFSET $1 LIMIT $2',
+                [20, 10]
+            );
+            done();
+        });
+        // Pass query_id parameter
+        messages.allMessages({ query: { query_id: 1 } });
+        it('should be passed correct SQL including query_id paramter', (done) => {
+            expect(pool.query).toBeCalledWith(
+                'SELECT * FROM message WHERE query_id = $1 ORDER BY created_at ASC',
+                [1]
             );
             done();
         });
