@@ -5,6 +5,7 @@ const labels = require('./labels');
 const querylabel = require('./querylabel');
 const queryuser = require('./queryuser');
 const users = require('./users');
+const roles = require('./roles');
 
 module.exports = {
     queries,
@@ -13,5 +14,6 @@ module.exports = {
     labels,
     querylabel,
     queryuser,
-    users
+    users,
+    roles
 };
