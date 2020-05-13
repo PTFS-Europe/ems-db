@@ -28,7 +28,16 @@ const queryResolvers = {
         }
     },
     deleteQuery: ({ params }) =>
-        pool.query('DELETE FROM query WHERE id = $1', [params.id])
+        pool.query('DELETE FROM query WHERE id = $1', [params.id]),
+    initiator: ({ query }) => {
+        let clause = '';
+        let params = [];
+        if (query.query_id) {
+            clause = 'WHERE query_id = $1';
+            params = [query.query_id]
+        }
+        return pool.query(`SELECT creator_id FROM message ${clause} ORDER BY created_at ASC LIMIT 1`, params);
+    }
 };
 
 module.exports = queryResolvers;

@@ -100,4 +100,18 @@ describe('Queries', () => {
             done();
         });
     });
+    describe('initiator', () => {
+        // Make the call
+        queries.initiator({ query: { query_id: 1 } });
+        it('should be called', (done) => {
+            expect(pool.query).toHaveBeenCalled();
+            done();
+        });
+        it('should be passed correct parameters', (done) => {
+            expect(
+                pool.query
+            ).toBeCalledWith('SELECT creator_id FROM message WHERE query_id = $1 ORDER BY created_at ASC LIMIT 1', [1]);
+            done();
+        });
+    });
 });
