@@ -113,5 +113,12 @@ describe('Queries', () => {
             ).toBeCalledWith('SELECT creator_id FROM message WHERE query_id = $1 ORDER BY created_at ASC LIMIT 1', [1]);
             done();
         });
+        queries.initiator({ query: {} });
+        it('should be passed correct parameters', (done) => {
+            expect(
+                pool.query
+            ).toBeCalledWith('SELECT creator_id FROM message  ORDER BY created_at ASC LIMIT 1', []);
+            done();
+        });
     });
 });
