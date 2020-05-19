@@ -22,7 +22,7 @@ const userResolvers = {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {
             return pool.query(
-                'UPDATE ems_user SET name = $1, role_id = $2, updated_at = NOW() WHERE id = $2 RETURNING *',
+                'UPDATE ems_user SET name = $1, role_id = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
                 [body.name, body.role_id, params.id]
             );
         } else {

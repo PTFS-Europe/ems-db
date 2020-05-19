@@ -69,7 +69,7 @@ describe('Users', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'UPDATE ems_user SET name = $1, role_id = $2, updated_at = NOW() WHERE id = $2 RETURNING *',
+                'UPDATE ems_user SET name = $1, role_id = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
                 ['Jeff Bloggs', 1, 1]
             );
             done();
