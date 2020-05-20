@@ -55,7 +55,7 @@ describe('Queries', () => {
         // Make the call *with an ID*
         queries.upsertQuery({
             params: { id: 1 },
-            body: { title: 'Fred', folder_id: 1 }
+            body: { title: 'Fred', folder_id: 1, initiator: 1 }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
@@ -65,22 +65,22 @@ describe('Queries', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'UPDATE query SET title = $1, folder_id = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-                ['Fred', 1, 1]
+                'UPDATE query SET title = $1, folder_id = $2, initiator = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+                ['Fred', 1, 1, 1]
             );
             done();
         });
         // Make the call *without an ID*
         queries.upsertQuery({
             params: {},
-            body: { title: 'Fred', folder_id: 1 }
+            body: { title: 'Fred', folder_id: 1, initiator: 1 }
         });
         it('should be called as an INSERT when ID is not passed', (done) => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'INSERT INTO query VALUES (DEFAULT, $1, $2, NOW(), NOW()) RETURNING *',
-                ['Fred', 1]
+                'INSERT INTO query VALUES (DEFAULT, $1, $2, NOW(), NOW(), $3) RETURNING *',
+                ['Fred', 1, 1]
             );
             done();
         });
@@ -100,9 +100,9 @@ describe('Queries', () => {
             done();
         });
     });
-    describe('initiator', () => {
+    describe('initiators', () => {
         // Make the call
-        queries.initiator({ query: { query_id: 1 } });
+        queries.initiators([1,2,3]);
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
             done();
@@ -110,14 +110,35 @@ describe('Queries', () => {
         it('should be passed correct parameters', (done) => {
             expect(
                 pool.query
-            ).toBeCalledWith('SELECT creator_id FROM message WHERE query_id = $1 ORDER BY created_at ASC LIMIT 1', [1]);
+            ).toBeCalledWith('SELECT id, initiator FROM query WHERE id IN ($1, $2, $3)', [1, 2, 3]);
             done();
         });
-        queries.initiator({ query: {} });
+    });
+    describe('participants', () => {
+        // Make the call
+        queries.participants([1, 2, 3]);
+        it('should be called', (done) => {
+            expect(pool.query).toHaveBeenCalled();
+            done();
+        });
         it('should be passed correct parameters', (done) => {
             expect(
                 pool.query
-            ).toBeCalledWith('SELECT creator_id FROM message  ORDER BY created_at ASC LIMIT 1', []);
+            ).toBeCalledWith('SELECT query_id, creator_id FROM message WHERE query_id IN ($1, $2, $3) GROUP BY query_id, creator_id', [1, 2, 3]);
+            done();
+        });
+    });
+    describe('latestMessages', () => {
+        // Make the call
+        queries.latestMessages([1, 2, 3]);
+        it('should be called', (done) => {
+            expect(pool.query).toHaveBeenCalled();
+            done();
+        });
+        it('should be passed correct parameters', (done) => {
+            expect(
+                pool.query
+            ).toBeCalledWith('SELECT * from message WHERE id IN (SELECT MAX(id) FROM message WHERE query_id IN ($1, $2, $3) GROUP BY query_id)', [1, 2, 3]);
             done();
         });
     });

@@ -1,0 +1,1 @@
+ALTER TABLE query DROP COLUMN initiator;
