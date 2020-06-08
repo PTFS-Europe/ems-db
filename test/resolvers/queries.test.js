@@ -24,15 +24,16 @@ describe('Queries', () => {
         });
         it('should be passed correct SQL', (done) => {
             expect(pool.query).toBeCalledWith(
-                'SELECT * FROM query ORDER BY updated_at DESC'
+                'SELECT * FROM query ORDER BY updated_at DESC', []
             );
             done();
         });
-        // Pass offset and limit parameters
-        queries.allQueries({ query: { offset: 20, limit: 10 } });
+        // Pass title, offset and limit parameters
+        queries.allQueries({ query: { title: 'hello', offset: 20, limit: 10 } });
         it('should be passed correct SQL including paramters', (done) => {
             expect(pool.query).toBeCalledWith(
-                'SELECT * FROM query ORDER BY updated_at DESC OFFSET 20 LIMIT 10'
+                "SELECT * FROM query WHERE title ILIKE '%' || $1 || '%' ORDER BY updated_at DESC OFFSET $2 LIMIT $3",
+                ['hello', 20, 10]
             );
             done();
         });

@@ -2,14 +2,22 @@ const pool = require('../config');
 
 const queryResolvers = {
     allQueries: ({ query }) => {
-        let sql = 'SELECT * FROM query ORDER BY updated_at DESC';
+        let sql = 'SELECT * FROM query';
+        let params = [];
+        if (query.title) {
+            params.push(query.title);
+            sql += ` WHERE title ILIKE '%' || $${params.length} || '%'`;
+        }
+        sql += ' ORDER BY updated_at DESC';
         if (query.offset) {
-            sql += ` OFFSET ${query.offset}`;
+            params.push(query.offset);
+            sql += ` OFFSET $${params.length}`;
         }
         if (query.limit) {
-            sql += ` LIMIT ${query.limit}`;
+            params.push(query.limit);
+            sql += ` LIMIT $${params.length}`;
         }
-        return pool.query(sql);
+        return pool.query(sql, params);
     },
     getQuery: ({ params }) =>
         pool.query('SELECT * FROM query WHERE id = $1', [params.id]),
@@ -42,7 +50,7 @@ const queryResolvers = {
         const placeholders = query_ids.map(
             (param, idx) => `$${idx + 1}`
         ).join(', ');
-        const sql = `SELECT query_id, creator_id FROM message WHERE query_id IN (${placeholders}) GROUP BY query_id, creator_id`; 
+        const sql = `SELECT query_id, creator_id FROM message WHERE query_id IN (${placeholders}) GROUP BY query_id, creator_id`;
         return pool.query(sql, query_ids);
     },
     latestMessages: (query_ids) => {
