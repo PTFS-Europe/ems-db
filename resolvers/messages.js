@@ -19,6 +19,7 @@ const messageResolvers = {
         }
         return pool.query(sql, params);
     },
+    getMessage: ({ params }) => pool.query('SELECT * FROM message WHERE id = $1', [ params.id ]),
     upsertMessage: ({ params, body }) => {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {
@@ -34,7 +35,12 @@ const messageResolvers = {
         }
     },
     deleteMessage: ({ params }) =>
-        pool.query('DELETE FROM message WHERE id = $1', [params.id])
+        pool.query('DELETE FROM message WHERE id = $1', [params.id]),
+    insertUpload: ({ filename, originalName, queryId, userId }) =>
+        pool.query(
+            'INSERT INTO message (query_id, creator_id, updated_at, filename, originalname) VALUES ($1, $2, NOW(), $3, $4) RETURNING *',
+            [queryId, userId, filename, originalName]
+        )
 };
 
 module.exports = messageResolvers;

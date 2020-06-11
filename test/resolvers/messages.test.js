@@ -48,6 +48,17 @@ describe('Messages', () => {
             done();
         });
     });
+    describe('getMessage', () => {
+        // Pass id parameter
+        messages.getMessage({ params: { id: 1 } });
+        it('should be passed correct SQL including id paramter', (done) => {
+            expect(pool.query).toBeCalledWith(
+                'SELECT * FROM message WHERE id = $1',
+                [1]
+            );
+            done();
+        });
+    });
     describe('upsertMessage', () => {
         // Make the call *with an ID*
         messages.upsertMessage({
@@ -93,6 +104,20 @@ describe('Messages', () => {
             expect(
                 pool.query
             ).toBeCalledWith('DELETE FROM message WHERE id = $1', [1]);
+            done();
+        });
+    });
+    describe('insertUpload', () => {
+        // Make the call
+        messages.insertUpload({ filename: 'myfile-1234.txt', originalName: 'myfile.txt', queryId: 1, userId: 1 });
+        it('should be called', (done) => {
+            expect(pool.query).toHaveBeenCalled();
+            done();
+        });
+        it('should be passed correct parameters', (done) => {
+            expect(
+                pool.query
+            ).toBeCalledWith('INSERT INTO message (query_id, creator_id, updated_at, filename, originalname) VALUES ($1, $2, NOW(), $3, $4) RETURNING *', [1, 1, 'myfile-1234.txt', 'myfile.txt']);
             done();
         });
     });
