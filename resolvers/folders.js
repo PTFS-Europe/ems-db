@@ -2,7 +2,7 @@ const pool = require('../config');
 
 const folderResolvers = {
     allFolders: () => {
-        let sql = 'SELECT * FROM folder ORDER BY name ASC';
+        const sql = 'SELECT f.*, (SELECT COUNT (*) FROM query q WHERE q.folder = f.code) AS count FROM folder f ORDER BY name ASC';
         return pool.query(sql);
     },
     upsertFolder: ({ params, body }) => {

@@ -1,0 +1,1 @@
+ALTER TABLE label DROP COLUMN colour;

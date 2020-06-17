@@ -24,7 +24,7 @@ describe('Labels', () => {
         });
         it('should be passed correct SQL', (done) => {
             expect(pool.query).toBeCalledWith(
-                'SELECT * FROM label ORDER BY name ASC'
+                'SELECT l.*, (SELECT COUNT(*) FROM querylabel ql WHERE ql.label_id = l.id) AS count FROM label l ORDER BY name ASC'
             );
             done();
         });

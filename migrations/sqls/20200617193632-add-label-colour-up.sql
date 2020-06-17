@@ -1,0 +1,1 @@
+ALTER TABLE label ADD COLUMN colour TEXT DEFAULT '#ccc';

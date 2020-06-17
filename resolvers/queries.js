@@ -2,11 +2,25 @@ const pool = require('../config');
 
 const queryResolvers = {
     allQueries: ({ query }) => {
-        let sql = 'SELECT * FROM query';
+        let sql = 'SELECT q.* FROM query q';
         let params = [];
+        let where = [];
+        if (query.label) {
+            params.push(query.label);
+            sql += ', querylabel ql';
+            where.push('q.id = ql.query_id');
+            where.push(`ql.label_id = $${params.length}`);
+        }
         if (query.title) {
             params.push(query.title);
-            sql += ` WHERE title ILIKE '%' || $${params.length} || '%'`;
+            where.push(`title ILIKE '%' || $${params.length} || '%'`);
+        }
+        if (query.folder) {
+            params.push(query.folder);
+            where.push(`folder = $${params.length}`);
+        }
+        if (where.length > 0) {
+            sql += ' WHERE ' + where.join(' AND ');
         }
         sql += ' ORDER BY updated_at DESC';
         if (query.offset) {

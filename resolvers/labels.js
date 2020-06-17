@@ -2,7 +2,7 @@ const pool = require('../config');
 
 const labelResolvers = {
     allLabels: () => {
-        let sql = 'SELECT * FROM label ORDER BY name ASC';
+        const sql = 'SELECT l.*, (SELECT COUNT(*) FROM querylabel ql WHERE ql.label_id = l.id) AS count FROM label l ORDER BY name ASC';
         return pool.query(sql);
     },
     upsertLabel: ({ params, body }) => {
