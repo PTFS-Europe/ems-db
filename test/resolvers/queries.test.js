@@ -29,11 +29,11 @@ describe('Queries', () => {
             done();
         });
         // Pass title, offset, limit, folder and label parameters
-        queries.allQueries({ query: { title: 'hello', offset: 20, limit: 10, folder: 'INBOX', label: 1 } });
+        queries.allQueries({ query: { title: 'hello', offset: 20, limit: 10, folder: 'ESCALATED', label: 1 } });
         it('should be passed correct SQL including parameters', (done) => {
             expect(pool.query).toBeCalledWith(
                 "SELECT q.* FROM query q, querylabel ql WHERE q.id = ql.query_id AND ql.label_id = $1 AND title ILIKE '%' || $2 || '%' AND folder = $3 ORDER BY updated_at DESC OFFSET $4 LIMIT $5",
-                [1, 'hello', 'INBOX', 20, 10]
+                [1, 'hello', 'ESCALATED', 20, 10]
             );
             done();
         });
@@ -56,7 +56,7 @@ describe('Queries', () => {
         // Make the call *with an ID*
         queries.upsertQuery({
             params: { id: 1 },
-            body: { title: 'Fred', folder_id: 1, initiator: 1 }
+            body: { title: 'Fred', folder: 'ESCALATED', initiator: 1 }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
@@ -66,22 +66,22 @@ describe('Queries', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'UPDATE query SET title = $1, folder_id = $2, initiator = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
-                ['Fred', 1, 1, 1]
+                'UPDATE query SET title = $1, folder = $2, initiator = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+                ['Fred', 'ESCALATED', 1, 1]
             );
             done();
         });
         // Make the call *without an ID*
         queries.upsertQuery({
             params: {},
-            body: { title: 'Fred', folder_id: 1, initiator: 1 }
+            body: { title: 'Fred', folder: 'ESCALATED', initiator: 1 }
         });
         it('should be called as an INSERT when ID is not passed', (done) => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'INSERT INTO query VALUES (DEFAULT, $1, $2, NOW(), NOW(), $3) RETURNING *',
-                ['Fred', 1, 1]
+                'INSERT INTO query VALUES (DEFAULT, $1, NOW(), NOW(), $2, $3) RETURNING *',
+                ['Fred', 1, 'ESCALATED']
             );
             done();
         });

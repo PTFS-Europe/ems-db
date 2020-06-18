@@ -39,13 +39,13 @@ const queryResolvers = {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {
             return pool.query(
-                'UPDATE query SET title = $1, folder_id = $2, initiator = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
-                [body.title, body.folder_id, body.initiator, params.id]
+                'UPDATE query SET title = $1, folder = $2, initiator = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+                [body.title, body.folder, body.initiator, params.id]
             );
         } else {
             return pool.query(
-                'INSERT INTO query VALUES (DEFAULT, $1, $2, NOW(), NOW(), $3) RETURNING *',
-                [body.title, body.folder_id, body.initiator]
+                'INSERT INTO query VALUES (DEFAULT, $1, NOW(), NOW(), $2, $3) RETURNING *',
+                [body.title, body.initiator, body.folder]
             );
         }
     },
