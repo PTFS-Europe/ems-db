@@ -73,6 +73,13 @@ const queryResolvers = {
         ).join(', ');
         const sql = `SELECT * from message WHERE id IN (SELECT MAX(id) FROM message WHERE query_id IN (${placeholders}) GROUP BY query_id)`;
         return pool.query(sql, query_ids);
+    },
+    labels: (query_ids) => {
+        const placeholders = query_ids.map(
+            (param, idx) => `$${idx + 1}`
+        ).join(', ');
+        const sql = `SELECT ql.* FROM querylabel ql INNER JOIN label l ON ql.label_id = l.id WHERE ql.query_id IN (${placeholders}) ORDER BY l.name ASC`;
+        return pool.query(sql, query_ids);
     }
 };
 

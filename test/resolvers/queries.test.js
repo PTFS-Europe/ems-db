@@ -143,4 +143,18 @@ describe('Queries', () => {
             done();
         });
     });
+    describe('labels', () => {
+        // Make the call
+        queries.labels([1, 2, 3]);
+        it('should be called', (done) => {
+            expect(pool.query).toHaveBeenCalled();
+            done();
+        });
+        it('should be passed correct parameters', (done) => {
+            expect(
+                pool.query
+            ).toBeCalledWith('SELECT ql.* FROM querylabel ql INNER JOIN label l ON ql.label_id = l.id WHERE ql.query_id IN ($1, $2, $3) ORDER BY l.name ASC', [1, 2, 3]);
+            done();
+        });
+    });
 });
