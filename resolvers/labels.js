@@ -14,7 +14,7 @@ const labelResolvers = {
             );
         } else {
             return pool.query(
-                'INSERT INTO label VALUES (DEFAULT, $1, NOW(), NOW(), 0, $2) RETURNING *',
+                'INSERT INTO label VALUES (DEFAULT, $1, NOW(), NOW(), $2) RETURNING *',
                 [body.name, body.colour]
             );
         }

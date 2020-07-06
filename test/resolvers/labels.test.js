@@ -57,7 +57,7 @@ describe('Labels', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'INSERT INTO label VALUES (DEFAULT, $1, NOW(), NOW(), 0, $2) RETURNING *',
+                'INSERT INTO label VALUES (DEFAULT, $1, NOW(), NOW(), $2) RETURNING *',
                 ['My new label', '#f00']
             );
             done();
