@@ -9,13 +9,13 @@ const labelResolvers = {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {
             return pool.query(
-                'UPDATE label SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-                [body.name, params.id]
+                'UPDATE label SET name = $1, colour = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+                [body.name, body.colour, params.id]
             );
         } else {
             return pool.query(
-                'INSERT INTO label VALUES (DEFAULT, $1, NOW(), NOW()) RETURNING *',
-                [body.name]
+                'INSERT INTO label VALUES (DEFAULT, $1, NOW(), NOW(), 0, $2) RETURNING *',
+                [body.name, body.colour]
             );
         }
     },

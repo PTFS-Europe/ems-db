@@ -33,7 +33,7 @@ describe('Labels', () => {
         // Make the call *with an ID*
         labels.upsertLabel({
             params: { id: 1 },
-            body: { name: 'My updated label name' }
+            body: { name: 'My updated label name', colour: '#f00' }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
@@ -43,22 +43,22 @@ describe('Labels', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'UPDATE label SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-                ['My updated label name', 1]
+                'UPDATE label SET name = $1, colour = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+                ['My updated label name', '#f00', 1]
             );
             done();
         });
         // Make the call *without an ID*
         labels.upsertLabel({
             params: {},
-            body: { name: 'My new label' }
+            body: { name: 'My new label', colour: '#f00' }
         });
         it('should be called as an INSERT when ID is not passed', (done) => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'INSERT INTO label VALUES (DEFAULT, $1, NOW(), NOW()) RETURNING *',
-                ['My new label']
+                'INSERT INTO label VALUES (DEFAULT, $1, NOW(), NOW(), 0, $2) RETURNING *',
+                ['My new label', '#f00']
             );
             done();
         });
