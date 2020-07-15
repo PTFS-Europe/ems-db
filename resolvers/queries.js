@@ -1,5 +1,22 @@
 const pool = require('../config');
 
+// We refactor this out of the resolvers object so we can reference it
+// from queryResolvers.upsertQuery & queryResolvers.updateBulk
+const upsertQuery = ({ params, body }) => {
+    // If we have an ID, we're updating
+    if (params.hasOwnProperty('id') && params.id) {
+        return pool.query(
+            'UPDATE query SET title = $1, folder = $2, initiator = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+            [body.title, body.folder, body.initiator, params.id]
+        );
+    } else {
+        return pool.query(
+            'INSERT INTO query VALUES (DEFAULT, $1, NOW(), NOW(), $2, $3) RETURNING *',
+            [body.title, body.initiator, body.folder]
+        );
+    }
+};
+
 const queryResolvers = {
     allQueries: ({ query }) => {
         let sql = 'SELECT q.* FROM query q';
@@ -35,22 +52,17 @@ const queryResolvers = {
     },
     getQuery: ({ params }) =>
         pool.query('SELECT * FROM query WHERE id = $1', [params.id]),
-    upsertQuery: ({ params, body }) => {
-        // If we have an ID, we're updating
-        if (params.hasOwnProperty('id') && params.id) {
-            return pool.query(
-                'UPDATE query SET title = $1, folder = $2, initiator = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
-                [body.title, body.folder, body.initiator, params.id]
-            );
-        } else {
-            return pool.query(
-                'INSERT INTO query VALUES (DEFAULT, $1, NOW(), NOW(), $2, $3) RETURNING *',
-                [body.title, body.initiator, body.folder]
-            );
-        }
-    },
+    upsertQuery,
     deleteQuery: ({ params }) =>
         pool.query('DELETE FROM query WHERE id = $1', [params.id]),
+    updateBulk: ({ body }) => {
+        const out = [];
+        body.forEach((query) => {
+            const response = upsertQuery({ params: { id: query.id }, body: query });
+            out.push(response);
+        })
+        return out;
+    },
     // The following functions return data that is based on a query,
     // as such they don't receive the request object from the API
     initiators: (query_ids) => {
