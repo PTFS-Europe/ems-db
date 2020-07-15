@@ -3,7 +3,7 @@ const pool = require('../config');
 const querylabelResolvers = {
     addLabelToQuery: ({ params }) =>
         pool.query(
-            'INSERT INTO querylabel VALUES ($1, $2, NOW(), NOW()) RETURNING *',
+            'INSERT INTO querylabel VALUES ($1, $2, NOW(), NOW()) ON CONFLICT DO NOTHING RETURNING *',
             [params.query_id, params.label_id]
         ),
     removeLabelFromQuery: ({ params }) =>

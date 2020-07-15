@@ -1,0 +1,1 @@
+ALTER TABLE querylabel DROP CONSTRAINT querylabel_pkey;

@@ -27,7 +27,7 @@ describe('QueryLabels', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'INSERT INTO querylabel VALUES ($1, $2, NOW(), NOW()) RETURNING *',
+                'INSERT INTO querylabel VALUES ($1, $2, NOW(), NOW()) ON CONFLICT DO NOTHING RETURNING *',
                 [1, 2]
             );
             done();

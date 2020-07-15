@@ -1,0 +1,1 @@
+ALTER TABLE querylabel ADD PRIMARY KEY (query_id, label_id);
