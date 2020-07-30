@@ -32,6 +32,31 @@ const userResolvers = {
             );
         }
     },
+    upsertUserByProviderId: ({
+        provider,
+        providerId,
+        providerMeta,
+        name,
+        avatar
+    }) => {
+        // Check if this user already exists
+        return pool.query('SELECT id FROM ems_user WHERE provider = $1 AND provider_id = $2', [provider, providerId])
+            .then((result) => {
+                if (result.rowCount === 1) {
+                    // User exists, update them
+                    return pool.query(
+                        'UPDATE ems_user SET provider_meta = $1, name = $2, avatar = $3, updated_at = NOW() WHERE provider = $4 AND provider_id = $5 RETURNING *',
+                        [providerMeta, name, avatar, provider, providerId]
+                    );
+                } else {
+                    return pool.query(
+                        'INSERT INTO ems_user VALUES (default, $1, null, NOW(), NOW(), $2, $3, $4, $5) RETURNING *',
+                        [name, provider, providerId, providerMeta, avatar]
+                    );
+                }
+            })
+            .catch((err) => err);
+    },
     deleteUser: ({ params }) =>
         pool.query('DELETE FROM ems_user WHERE id = $1', [params.id])
 };
