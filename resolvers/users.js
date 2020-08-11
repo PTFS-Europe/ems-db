@@ -49,10 +49,16 @@ const userResolvers = {
                         [providerMeta, name, avatar, provider, providerId]
                     );
                 } else {
-                    return pool.query(
-                        'INSERT INTO ems_user VALUES (default, $1, null, NOW(), NOW(), $2, $3, $4, $5) RETURNING *',
-                        [name, provider, providerId, providerMeta, avatar]
-                    );
+                    // Give the new user the CUSTOMER role
+                    return pool.query('SELECT id FROM role WHERE code = $1', ['CUSTOMER']).then((roles) => {
+                        if (roles.rowCount === 1) {
+                            return pool.query(
+                                'INSERT INTO ems_user VALUES (default, $1, $2, NOW(), NOW(), $3, $4, $5, $6) RETURNING *',
+                                [name, roles.rows[0].id, provider, providerId, providerMeta, avatar]
+                            );
+                        }
+
+                    });
                 }
             })
             .catch((err) => err);
