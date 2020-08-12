@@ -29,6 +29,21 @@ describe('Roles', () => {
             done();
         });
     });
+    describe('getRoleByCode', () => {
+        // Make the call
+        roles.getRoleByCode({params: { code: '2187'}});
+        it('should be called', (done) => {
+            expect(pool.query).toHaveBeenCalled();
+            done();
+        });
+        it('should be passed correct SQL', (done) => {
+            expect(pool.query).toBeCalledWith(
+                'SELECT * FROM role WHERE code = $1',
+                ['2187']
+            );
+            done();
+        });
+    });
     describe('upsertRole', () => {
         // Make the call *with an ID*
         roles.upsertRole({
