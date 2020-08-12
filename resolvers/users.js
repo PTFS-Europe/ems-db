@@ -1,5 +1,7 @@
 const pool = require('../config');
 
+const roleResolvers = require('./roles');
+
 const userResolvers = {
     allUsers: ({ query }) => {
         let params = [];
@@ -18,18 +20,27 @@ const userResolvers = {
     },
     getUser: ({ params }) =>
         pool.query('SELECT * FROM ems_user WHERE id = $1', [params.id]),
+    getUserByProvider: ({ params }) =>
+        pool.query('SELECT * FROM ems_user WHERE provider = $1 AND provider_id = $2', [params.provider, params.providerId]),
     upsertUser: ({ params, body }) => {
         // If we have an ID, we're updating
-        if (params.hasOwnProperty('id') && params.id) {
+        if (params && params.id) {
             return pool.query(
-                'UPDATE ems_user SET name = $1, role_id = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-                [body.name, body.role_id, params.id]
+                'UPDATE ems_user SET name = $1, role_id = $2, provider_meta = $3, avatar = $4, updated_at = NOW() WHERE id = $5 RETURNING *',
+                [body.name, body.role_id, body.provider_meta, body.avatar, params.id]
             );
         } else {
-            return pool.query(
-                'INSERT INTO ems_user VALUES (DEFAULT, $1, $2, NOW(), NOW()) RETURNING *',
-                [body.name, body.role_id]
-            );
+            // Give the new user the CUSTOMER role
+            return roleResolvers.getRoleByCode({ params: { code: 'CUSTOMER' } })
+                .then((roles) => {
+                    if (roles.rowCount === 1) {
+                        const role = roles.rows[0].id;
+                        return pool.query(
+                            'INSERT INTO ems_user VALUES (default, $1, $2, NOW(), NOW(), $3, $4, $5, $6) RETURNING *',
+                            [body.name, role, body.provider, body.provider_id, body.provider_meta, body.avatar]
+                        );
+                    }
+                });
         }
     },
     upsertUserByProviderId: ({
@@ -40,24 +51,32 @@ const userResolvers = {
         avatar
     }) => {
         // Check if this user already exists
-        return pool.query('SELECT id FROM ems_user WHERE provider = $1 AND provider_id = $2', [provider, providerId])
+        return userResolvers.getUserByProvider({ params: { provider, providerId } })
             .then((result) => {
                 if (result.rowCount === 1) {
                     // User exists, update them
-                    return pool.query(
-                        'UPDATE ems_user SET provider_meta = $1, name = $2, avatar = $3, updated_at = NOW() WHERE provider = $4 AND provider_id = $5 RETURNING *',
-                        [providerMeta, name, avatar, provider, providerId]
-                    );
-                } else {
-                    // Give the new user the CUSTOMER role
-                    return pool.query('SELECT id FROM role WHERE code = $1', ['CUSTOMER']).then((roles) => {
-                        if (roles.rowCount === 1) {
-                            return pool.query(
-                                'INSERT INTO ems_user VALUES (default, $1, $2, NOW(), NOW(), $3, $4, $5, $6) RETURNING *',
-                                [name, roles.rows[0].id, provider, providerId, providerMeta, avatar]
-                            );
+                    const user = result.rows[0];
+                    return userResolvers.upsertUser({
+                        params: {
+                            id: user.id
+                        },
+                        body: {
+                            name,
+                            role_id: user.role_id,
+                            provider_meta: providerMeta,
+                            avatar,
+                            provider_id: user.provider_id
                         }
-
+                    });
+                } else {
+                    return userResolvers.upsertUser({
+                        body: {
+                            name,
+                            provider,
+                            provider_id: providerId,
+                            provider_meta: providerMeta,
+                            avatar
+                        }
                     });
                 }
             })

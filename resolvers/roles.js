@@ -5,6 +5,8 @@ const roleResolvers = {
         let sql = 'SELECT * FROM role ORDER BY name ASC';
         return pool.query(sql);
     },
+    getRoleByCode: ({ params }) =>
+        pool.query('SELECT * FROM role WHERE code = $1', [params.code]),
     upsertRole: ({ params, body }) => {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {
