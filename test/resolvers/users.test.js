@@ -8,15 +8,15 @@ const roleResolvers = require('../../resolvers/roles');
 // Mock pool
 jest.mock('../../config', () => ({
     // A mock query function
-    query: jest.fn((sql, params) => 
-        new Promise((resolve) => resolve({rowCount: 1, rows: [{id: 1}]}))
+    query: jest.fn((sql, params) =>
+        new Promise((resolve) => resolve({ rowCount: 1, rows: [{ id: 1 }] }))
     )
 }));
 
 // Mock roleResolvers
 jest.mock('../../resolvers/roles', () => ({
-    getRoleByCode: jest.fn((sql, params) => 
-        new Promise((resolve) => resolve({rowCount: 1, rows: [{id: 1}]}))
+    getRoleByCode: jest.fn((sql, params) =>
+        new Promise((resolve) => resolve({ rowCount: 1, rows: [{ id: 1 }] }))
     )
 }));
 
@@ -43,7 +43,7 @@ describe('Users', () => {
             users.allUsers({ query: { user_ids: '1_2_3' } });
             expect(pool.query).toBeCalledWith(
                 'SELECT * FROM ems_user WHERE id IN ($1, $2, $3) ORDER BY name ASC',
-                [1,2,3]
+                [1, 2, 3]
             );
             done();
         });
@@ -58,7 +58,7 @@ describe('Users', () => {
             users.getUser({ params: { id: 1 } });
             expect(
                 pool.query
-            ).toBeCalledWith('SELECT * FROM ems_user WHERE id = $1', [1]);
+            ).toBeCalledWith('SELECT u.*, r.code AS role_code FROM ems_user u INNER JOIN role r ON r.id = u.role_id WHERE u.id = $1', [1]);
             done();
         });
     });

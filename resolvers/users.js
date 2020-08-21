@@ -13,13 +13,13 @@ const userResolvers = {
             params = query.user_ids.split('_').map(param => parseInt(param));
             sql += ' WHERE id IN (' +
                 params.map((param, idx) => `$${idx + 1}`).join(', ') +
-            ')';
+                ')';
         }
         sql += ' ORDER BY name ASC';
         return pool.query(sql, params);
     },
     getUser: ({ params }) =>
-        pool.query('SELECT * FROM ems_user WHERE id = $1', [params.id]),
+        pool.query('SELECT u.*, r.code AS role_code FROM ems_user u INNER JOIN role r ON r.id = u.role_id WHERE u.id = $1', [params.id]),
     getUserByProvider: ({ params }) =>
         pool.query('SELECT * FROM ems_user WHERE provider = $1 AND provider_id = $2', [params.provider, params.providerId]),
     upsertUser: ({ params, body }) => {
