@@ -1,0 +1,1 @@
+ALTER TABLE queryuser ADD COLUMN unseen_count INTEGER NOT NULL;
