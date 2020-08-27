@@ -1,4 +1,5 @@
 const pool = require('../config');
+const queryuser = require('./queryuser');
 
 const messageResolvers = {
     allMessages: ({ query }) => {
@@ -19,8 +20,8 @@ const messageResolvers = {
         }
         return pool.query(sql, params);
     },
-    getMessage: ({ params }) => pool.query('SELECT * FROM message WHERE id = $1', [ params.id ]),
-    upsertMessage: ({ params, body }) => {
+    getMessage: ({ params }) => pool.query('SELECT * FROM message WHERE id = $1', [params.id]),
+    upsertMessage: async ({ params, body, user }) => {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {
             return pool.query(
@@ -28,14 +29,23 @@ const messageResolvers = {
                 [body.content, params.id]
             );
         } else {
-            return pool.query(
+            const newMessage = await pool.query(
                 'INSERT INTO message VALUES (DEFAULT, $1, $2, $3, NOW(), NOW()) RETURNING *',
                 [body.query_id, body.creator_id, body.content]
             );
+            // Increment the unseen count for those who need it
+            await queryuser.incrementUnseenCounts(
+                { query_id: body.query_id, creator: user.id }
+            );
+            return newMessage;
         }
     },
-    deleteMessage: ({ params }) =>
-        pool.query('DELETE FROM message WHERE id = $1', [params.id]),
+    deleteMessage: async ({ params }, message) => {
+        const ret = await pool.query('DELETE FROM message WHERE id = $1', [params.id]);
+        // Decrement the unseen count as appropriate
+        await queryuser.decrementMessageDelete({ message })
+        return ret;
+    },
     insertUpload: ({ filename, originalName, queryId, userId }) =>
         pool.query(
             'INSERT INTO message (query_id, creator_id, updated_at, filename, originalname) VALUES ($1, $2, NOW(), $3, $4) RETURNING *',
