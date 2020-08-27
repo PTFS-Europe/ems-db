@@ -1,0 +1,1 @@
+ALTER TABLE queryuser DROP COLUMN query_role;
