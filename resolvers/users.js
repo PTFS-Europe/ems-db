@@ -4,16 +4,27 @@ const roleResolvers = require('./roles');
 
 const userResolvers = {
     allUsers: ({ query }) => {
+        let where = [];
+        let placeholders = [];
         let params = [];
-        let sql = 'SELECT * FROM ems_user';
         // If we're supplied with some user IDs, we must use those to filter
         // our requested records
         if (query.user_ids) {
             // user_ids should be a underscore delimited string of IDs
             params = query.user_ids.split('_').map(param => parseInt(param));
-            sql += ' WHERE id IN (' +
-                params.map((param, idx) => `$${idx + 1}`).join(', ') +
-                ')';
+            placeholders = params.map(
+                (param, idx) => `$${idx + 1}`
+            );
+            where.push(`eu.id IN (${placeholders})`);
+        }
+        // If we're passed a role code we should filter on that
+        if (query.role_code) {
+            params.push(query.role_code);
+            where.push(`r.code = $${params.length}`);
+        }
+        let sql = 'SELECT eu.* FROM ems_user eu, role r WHERE eu.role_id = r.id';
+        if (where.length > 0) {
+            sql += ' AND ' + where.join(' AND ');
         }
         sql += ' ORDER BY name ASC';
         return pool.query(sql, params);

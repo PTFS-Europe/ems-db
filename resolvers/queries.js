@@ -18,7 +18,7 @@ const upsertQuery = ({ params, body }) => {
 };
 
 const queryResolvers = {
-    allQueries: ({ query }) => {
+    allQueries: ({ query, user }) => {
         let sql = 'SELECT q.* FROM query q';
         let params = [];
         let where = [];
@@ -35,6 +35,10 @@ const queryResolvers = {
         if (query.folder) {
             params.push(query.folder);
             where.push(`folder = $${params.length}`);
+        }
+        // Only return a user's own queries if they're not STAFF
+        if (user.role_code !== 'STAFF') {
+            where.push(`initiator = ${user.id}`);
         }
         if (where.length > 0) {
             sql += ' WHERE ' + where.join(' AND ');
