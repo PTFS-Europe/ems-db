@@ -3,11 +3,32 @@ const queries = require('./queries');
 const users = require('./users');
 
 const queryuserResolvers = {
-    updateMostRecentSeen: ({ params, body }) =>
-        pool.query(
+    updateMostRecentSeen: async ({ params, body }) => {
+        await pool.query(
             'UPDATE queryuser SET most_recent_seen = $1 WHERE query_id=$2 AND user_id=$3 RETURNING *',
             [body.most_recent_seen, params.query_id, params.user_id]
+        );
+        return queryuserResolvers.calculateUnseenCount({
+            query_id: params.query_id,
+            user_id: params.user_id,
+            mostRecentSeen: body.most_recent_seen
+        });
+    },
+    getMostRecentSeen: ({ id }) =>
+        pool.query(
+            'SELECT query_id, most_recent_seen FROM queryuser WHERE user_id = $1',
+            [id]
         ),
+    calculateUnseenCount: async ({ query_id, user_id, mostRecentSeen }) => {
+        const unseen = await pool.query(
+            'SELECT count(*) AS rowcount FROM message WHERE query_id  = $1 AND creator_id != $2 AND id > $3',
+            [query_id, user_id, mostRecentSeen]
+        );
+        return pool.query(
+            'UPDATE queryuser SET unseen_count = $1 WHERE query_id = $2 AND user_id = $3 RETURNING *',
+            [unseen.rows[0].rowcount, query_id, user_id]
+        );
+    },
     // Increment the unseen count on a single query / user
     incrementUnseenCount: ({ query_id, user_id }) => {
         // This query attempts to insert a new row into queryuser, if it conflicts
