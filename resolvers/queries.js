@@ -28,13 +28,32 @@ const queryResolvers = {
             where.push('q.id = ql.query_id');
             where.push(`ql.label_id = $${params.length}`);
         }
+        // If we're filtering based on a calculated folder
+        if (
+            query.folder &&
+            ['ALL_QUERIES', 'UNREAD'].indexOf(query.folder) > -1
+        ) {
+            params.push(user.id);
+            sql += ', queryuser qu';
+            where.push('q.id = qu.query_id');
+            where.push(`qu.user_id = $${params.length}`)
+            if (query.folder === 'ALL_QUERIES') {
+                where.push('qu.unseen_count = 0');
+            } else {
+                where.push('qu.unseen_count > 0');
+            }
+        }
+        // If we're filtering based on a non-calculated folder
+        if (
+            query.folder &&
+            ['ALL_QUERIES', 'UNREAD'].indexOf(query.folder) === -1
+        ) {
+            params.push(query.folder);
+            where.push(`folder = $${params.length}`);
+        }
         if (query.title) {
             params.push(query.title);
             where.push(`title ILIKE '%' || $${params.length} || '%'`);
-        }
-        if (query.folder) {
-            params.push(query.folder);
-            where.push(`folder = $${params.length}`);
         }
         // Only return a user's own queries if they're not STAFF
         if (user.role_code !== 'STAFF') {

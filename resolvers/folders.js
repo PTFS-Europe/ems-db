@@ -1,8 +1,10 @@
 const pool = require('../config');
+const queries = require('./queries');
+const queryuser = require('./queryuser');
 
 const folderResolvers = {
     allFolders: () => {
-        const sql = 'SELECT f.*, (SELECT COUNT (*) FROM query q WHERE q.folder = f.code) AS count FROM folder f ORDER BY name ASC';
+        const sql = 'SELECT * FROM folder f ORDER BY name ASC';
         return pool.query(sql);
     },
     upsertFolder: ({ params, body }) => {
@@ -20,7 +22,40 @@ const folderResolvers = {
         }
     },
     deleteFolder: ({ params }) =>
-        pool.query('DELETE FROM folder WHERE id = $1', [params.id])
+        pool.query('DELETE FROM folder WHERE id = $1', [params.id]),
+    folderCounts: async ({ user }) => {
+        try {
+            // Fetch all the folders and all this user's queries
+            const [allFolders, allQueries] = await Promise.all([
+                folderResolvers.allFolders(),
+                queries.allQueries({ query: {}, user })
+            ]);
+            // We need an array of the user's queries
+            const queryIds = allQueries.rows.map((row) => row.id);
+            // Get the unseen counts for all of the user's queries
+            const unseenCounts = await queryuser.getUserUnseenCounts({
+                query_ids: queryIds,
+                user_id: user.id
+            });
+            // Determine which queries have unseen messages
+            const queriesWithUnseen = unseenCounts.rows.filter(
+                (unseenRow) => unseenRow.unseen_count > 0
+            );
+            const result = {
+                UNREAD: queriesWithUnseen.length,
+                ALL_QUERIES: allQueries.rowCount - queriesWithUnseen.length
+            };
+            allFolders.rows.forEach((folder) => {
+                const hasOccurences = allQueries.rows.filter(
+                    (query) => query.folder === folder.code
+                ).length;
+                result[folder.id] = hasOccurences;
+            });
+            return Promise.resolve(result);
+        } catch (err) {
+            Promise.reject(err);
+        }
+    }
 };
 
 module.exports = folderResolvers;

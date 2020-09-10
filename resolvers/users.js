@@ -22,7 +22,7 @@ const userResolvers = {
             params.push(query.role_code);
             where.push(`r.code = $${params.length}`);
         }
-        let sql = 'SELECT eu.* FROM ems_user eu, role r WHERE eu.role_id = r.id';
+        let sql = 'SELECT eu.*, r.code AS role_code FROM ems_user eu, role r WHERE eu.role_id = r.id';
         if (where.length > 0) {
             sql += ' AND ' + where.join(' AND ');
         }
