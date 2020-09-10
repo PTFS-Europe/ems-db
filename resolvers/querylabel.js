@@ -1,6 +1,16 @@
 const pool = require('../config');
 
 const querylabelResolvers = {
+    // Retrieve all the labels for a provided array of query IDs
+    allLabelsForQueries: (query_ids) => {
+        const placeholders = query_ids.map((id, idx) => {
+            return `$${idx + 1}`;
+        });
+        return pool.query(
+            `SELECT query_id, label_id FROM querylabel WHERE query_id IN (${placeholders})`,
+            query_ids
+        );
+    },
     addLabelToQuery: ({ params }) =>
         pool.query(
             'INSERT INTO querylabel VALUES ($1, $2, NOW(), NOW()) ON CONFLICT DO NOTHING RETURNING *',
