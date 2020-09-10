@@ -7,6 +7,8 @@ const labelResolvers = {
         const sql = 'SELECT * FROM label l ORDER BY name ASC';
         return pool.query(sql);
     },
+    getLabel: ({ params }) =>
+        pool.query('SELECT * FROM label WHERE id = $1', [params.id]),
     upsertLabel: ({ params, body }) => {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {
