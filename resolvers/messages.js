@@ -33,8 +33,9 @@ const messageResolvers = {
                 'INSERT INTO message VALUES (DEFAULT, $1, $2, $3, NOW(), NOW()) RETURNING *',
                 [body.query_id, body.creator_id, body.content]
             );
-            // Increment the unseen count for those who need it
-            await queryuser.incrementUnseenCounts(
+            // Add / update queryuser relationships for those
+            // that need it
+            await queryuser.upsertQueryUsers(
                 { query_id: body.query_id, creator: user.id }
             );
             return newMessage;
@@ -46,11 +47,19 @@ const messageResolvers = {
         await queryuser.decrementMessageDelete({ message })
         return ret;
     },
-    insertUpload: ({ filename, originalName, queryId, userId }) =>
-        pool.query(
+    insertUpload: ({ filename, originalName, queryId, userId }) => {
+        return pool.query(
             'INSERT INTO message (query_id, creator_id, updated_at, filename, originalname) VALUES ($1, $2, NOW(), $3, $4) RETURNING *',
             [queryId, userId, filename, originalName]
-        )
+        ).then(async (result) => {
+            // Add / update queryuser relationships for those
+            // that need it
+            await queryuser.upsertQueryUsers(
+                { query_id: queryId, creator: userId }
+            );
+            return result;
+        });
+    }
 };
 
 module.exports = messageResolvers;

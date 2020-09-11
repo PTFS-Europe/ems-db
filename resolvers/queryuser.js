@@ -29,30 +29,30 @@ const queryuserResolvers = {
             [unseen.rows[0].rowcount, query_id, user_id]
         );
     },
-    // Increment the unseen count on a single query / user
-    incrementUnseenCount: ({ query_id, user_id }) => {
+    // Upsert a queryuser row
+    upsertQueryUser: ({ query_id, user_id }) => {
         // This query attempts to insert a new row into queryuser, if it conflicts
         // it increments the existing row
-        const sql = 'INSERT INTO queryuser VALUES ($1, $2, NOW(), NOW(), 0, 1) ON CONFLICT ON CONSTRAINT userquery_pkey DO UPDATE SET unseen_count = queryuser.unseen_count + 1 WHERE queryuser.query_id = $3 AND queryuser.user_id = $4';
+        const sql = 'INSERT INTO queryuser VALUES ($1, $2, NOW(), NOW(), 0, 0) ON CONFLICT ON CONSTRAINT userquery_pkey DO UPDATE SET unseen_count = queryuser.unseen_count + 1 WHERE queryuser.query_id = $3 AND queryuser.user_id = $4';
         return pool.query(sql, [query_id, user_id, query_id, user_id]);
     },
-    // Increment the unseen counts for a given query for all users except
+    // Upsert queryuser rows for a  given query for all users except
     // the passed one
-    incrementUnseenCounts: async ({ query_id, creator }) => {
-        // Determine who's unseen counter needs incrementing. This needs to be anyone
+    upsertQueryUsers: async ({ query_id, creator }) => {
+        // Determine who needs adding / updating. This needs to be anyone
         // who can see this query, i.e. participants & STAFF, except the sender
         const participants = await queries.participants([query_id]);
         const staff = await users.allUsers({ query: { role_code: 'STAFF' } });
-        let toIncrementDeDup = {};
-        participants.rows.forEach((pRow) => toIncrementDeDup[pRow.creator_id] = 1);
-        staff.rows.forEach((sRow) => toIncrementDeDup[sRow.id] = 1);
-        // Remove the sender from the list of users needing their unseen count
-        // incrementing
-        delete toIncrementDeDup[creator];
-        const toIncrement = Object.keys(toIncrementDeDup);
-        for (let i = 0; i < toIncrement.length; i++) {
-            await queryuserResolvers.incrementUnseenCount(
-                { query_id, user_id: toIncrement[i] }
+        let upsertDeDup = {};
+        participants.rows.forEach((pRow) => upsertDeDup[pRow.creator_id] = 1);
+        staff.rows.forEach((sRow) => upsertDeDup[sRow.id] = 1);
+        // Remove the sender from the list of users needing
+        // creating / updating
+        delete upsertDeDup[creator];
+        const toUpsert = Object.keys(upsertDeDup);
+        for (let i = 0; i < toUpsert.length; i++) {
+            await queryuserResolvers.upsertQueryUser(
+                { query_id, user_id: toUpsert[i] }
             );
         }
     },
