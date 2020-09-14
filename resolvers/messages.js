@@ -20,7 +20,8 @@ const messageResolvers = {
         }
         return pool.query(sql, params);
     },
-    getMessage: ({ params }) => pool.query('SELECT * FROM message WHERE id = $1', [params.id]),
+    getMessage: ({ params }) =>
+        pool.query('SELECT * FROM message WHERE id = $1', [params.id]),
     upsertMessage: async ({ params, body, user }) => {
         // If we have an ID, we're updating
         if (params.hasOwnProperty('id') && params.id) {
@@ -35,30 +36,36 @@ const messageResolvers = {
             );
             // Add / update queryuser relationships for those
             // that need it
-            await queryuser.upsertQueryUsers(
-                { query_id: body.query_id, creator: user.id }
-            );
+            await queryuser.upsertQueryUsers({
+                query_id: body.query_id,
+                creator: user.id
+            });
             return newMessage;
         }
     },
     deleteMessage: async ({ params }, message) => {
-        const ret = await pool.query('DELETE FROM message WHERE id = $1', [params.id]);
+        const ret = await pool.query('DELETE FROM message WHERE id = $1', [
+            params.id
+        ]);
         // Decrement the unseen count as appropriate
-        await queryuser.decrementMessageDelete({ message })
+        await queryuser.decrementMessageDelete({ message });
         return ret;
     },
     insertUpload: ({ filename, originalName, queryId, userId }) => {
-        return pool.query(
-            'INSERT INTO message (query_id, creator_id, updated_at, filename, originalname) VALUES ($1, $2, NOW(), $3, $4) RETURNING *',
-            [queryId, userId, filename, originalName]
-        ).then(async (result) => {
-            // Add / update queryuser relationships for those
-            // that need it
-            await queryuser.upsertQueryUsers(
-                { query_id: queryId, creator: userId }
-            );
-            return result;
-        });
+        return pool
+            .query(
+                'INSERT INTO message (query_id, creator_id, updated_at, filename, originalname) VALUES ($1, $2, NOW(), $3, $4) RETURNING *',
+                [queryId, userId, filename, originalName]
+            )
+            .then(async (result) => {
+                // Add / update queryuser relationships for those
+                // that need it
+                await queryuser.upsertQueryUsers({
+                    query_id: queryId,
+                    creator: userId
+                });
+                return result;
+            });
     }
 };
 

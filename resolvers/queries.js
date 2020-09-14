@@ -36,7 +36,7 @@ const queryResolvers = {
             params.push(user.id);
             sql += ', queryuser qu';
             where.push('q.id = qu.query_id');
-            where.push(`qu.user_id = $${params.length}`)
+            where.push(`qu.user_id = $${params.length}`);
             if (query.folder === 'ALL_QUERIES') {
                 where.push('qu.unseen_count = 0');
             } else {
@@ -81,38 +81,41 @@ const queryResolvers = {
     updateBulk: ({ body }) => {
         const out = [];
         body.forEach((query) => {
-            const response = upsertQuery({ params: { id: query.id }, body: query });
+            const response = upsertQuery({
+                params: { id: query.id },
+                body: query
+            });
             out.push(response);
-        })
+        });
         return out;
     },
     // The following functions return data that is based on a query,
     // as such they don't receive the request object from the API
     initiators: (query_ids) => {
-        const placeholders = query_ids.map(
-            (param, idx) => `$${idx + 1}`
-        ).join(', ');
+        const placeholders = query_ids
+            .map((param, idx) => `$${idx + 1}`)
+            .join(', ');
         const sql = `SELECT id, initiator FROM query WHERE id IN (${placeholders})`;
         return pool.query(sql, query_ids);
     },
     participants: (query_ids) => {
-        const placeholders = query_ids.map(
-            (param, idx) => `$${idx + 1}`
-        ).join(', ');
+        const placeholders = query_ids
+            .map((param, idx) => `$${idx + 1}`)
+            .join(', ');
         const sql = `SELECT query_id, creator_id FROM message WHERE query_id IN (${placeholders}) GROUP BY query_id, creator_id`;
         return pool.query(sql, query_ids);
     },
     latestMessages: (query_ids) => {
-        const placeholders = query_ids.map(
-            (param, idx) => `$${idx + 1}`
-        ).join(', ');
+        const placeholders = query_ids
+            .map((param, idx) => `$${idx + 1}`)
+            .join(', ');
         const sql = `SELECT * from message WHERE id IN (SELECT MAX(id) FROM message WHERE query_id IN (${placeholders}) GROUP BY query_id)`;
         return pool.query(sql, query_ids);
     },
     labels: (query_ids) => {
-        const placeholders = query_ids.map(
-            (param, idx) => `$${idx + 1}`
-        ).join(', ');
+        const placeholders = query_ids
+            .map((param, idx) => `$${idx + 1}`)
+            .join(', ');
         const sql = `SELECT ql.* FROM querylabel ql INNER JOIN label l ON ql.label_id = l.id WHERE ql.query_id IN (${placeholders}) ORDER BY l.name ASC`;
         return pool.query(sql, query_ids);
     }

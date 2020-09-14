@@ -33,7 +33,8 @@ const queryuserResolvers = {
     upsertQueryUser: ({ query_id, user_id }) => {
         // This query attempts to insert a new row into queryuser, if it conflicts
         // it increments the existing row
-        const sql = 'INSERT INTO queryuser VALUES ($1, $2, NOW(), NOW(), 0, 0) ON CONFLICT ON CONSTRAINT userquery_pkey DO UPDATE SET unseen_count = queryuser.unseen_count + 1 WHERE queryuser.query_id = $3 AND queryuser.user_id = $4';
+        const sql =
+            'INSERT INTO queryuser VALUES ($1, $2, NOW(), NOW(), 0, 0) ON CONFLICT ON CONSTRAINT userquery_pkey DO UPDATE SET unseen_count = queryuser.unseen_count + 1 WHERE queryuser.query_id = $3 AND queryuser.user_id = $4';
         return pool.query(sql, [query_id, user_id, query_id, user_id]);
     },
     // Upsert queryuser rows for a  given query for all users except
@@ -44,21 +45,23 @@ const queryuserResolvers = {
         const participants = await queries.participants([query_id]);
         const staff = await users.allUsers({ query: { role_code: 'STAFF' } });
         let upsertDeDup = {};
-        participants.rows.forEach((pRow) => upsertDeDup[pRow.creator_id] = 1);
-        staff.rows.forEach((sRow) => upsertDeDup[sRow.id] = 1);
+        participants.rows.forEach((pRow) => (upsertDeDup[pRow.creator_id] = 1));
+        staff.rows.forEach((sRow) => (upsertDeDup[sRow.id] = 1));
         // Remove the sender from the list of users needing
         // creating / updating
         delete upsertDeDup[creator];
         const toUpsert = Object.keys(upsertDeDup);
         for (let i = 0; i < toUpsert.length; i++) {
-            await queryuserResolvers.upsertQueryUser(
-                { query_id, user_id: toUpsert[i] }
-            );
+            await queryuserResolvers.upsertQueryUser({
+                query_id,
+                user_id: toUpsert[i]
+            });
         }
     },
     // Decrement the unseen count on a single query / user
     decrementUnseenCount: ({ query_id, user_id }) => {
-        const sql = 'UPDATE queryuser SET unseen_count = unseen_count - 1 WHERE query_id = $1 AND user_id = $2';
+        const sql =
+            'UPDATE queryuser SET unseen_count = unseen_count - 1 WHERE query_id = $1 AND user_id = $2';
         return pool.query(sql, [query_id, user_id]);
     },
     // Following the deletion of a message, decrement the unseen_count
@@ -85,15 +88,15 @@ const queryuserResolvers = {
             { query_id }
         );
         return toDecrement.rows
-            .filter(
-                (toExclude) => (!exclude || exclude.length === 0) ?
-                    toExclude :
-                    exclude.indexOf(toExclude.user_id) === -1
+            .filter((toExclude) =>
+                !exclude || exclude.length === 0
+                    ? toExclude
+                    : exclude.indexOf(toExclude.user_id) === -1
             )
-            .filter(
-                (toRecent) => !most_recent_seen ?
-                    toRecent :
-                    toRecent.most_recent_seen < most_recent_seen
+            .filter((toRecent) =>
+                !most_recent_seen
+                    ? toRecent
+                    : toRecent.most_recent_seen < most_recent_seen
             )
             .map((row) => row.user_id);
     },
@@ -103,9 +106,9 @@ const queryuserResolvers = {
         let optionalIn = '';
         let parameters = [];
         if (query_ids && query_ids.length > 0) {
-            const placeholders = query_ids.map(
-                (param, idx) => `$${idx + 1}`
-            ).join(', ');
+            const placeholders = query_ids
+                .map((param, idx) => `$${idx + 1}`)
+                .join(', ');
             optionalIn = `query_id IN (${placeholders}) AND`;
             parameters = [...query_ids];
         }

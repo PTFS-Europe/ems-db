@@ -25,14 +25,25 @@ describe('Queries', () => {
         it('should be passed correct SQL', (done) => {
             queries.allQueries({ query: {} });
             expect(pool.query).toBeCalledWith(
-                'SELECT q.* FROM query q ORDER BY updated_at DESC', []
+                'SELECT q.* FROM query q ORDER BY updated_at DESC',
+                []
             );
             done();
         });
         // Pass title, offset, limit, folder and label parameters
         it('should be passed correct SQL including parameters', (done) => {
-            queries.allQueries({ query: { title: 'hello', offset: 20, limit: 10, folder: 'ESCALATED', label: 1 } });
-            expect(pool.query).toBeCalledWith(
+            queries.allQueries({
+                query: {
+                    title: 'hello',
+                    offset: 20,
+                    limit: 10,
+                    folder: 'ESCALATED',
+                    label: 1
+                }
+            });
+            expect(
+                pool.query
+            ).toBeCalledWith(
                 "SELECT q.* FROM query q, querylabel ql WHERE q.id = ql.query_id AND ql.label_id = $1 AND title ILIKE '%' || $2 || '%' AND folder = $3 ORDER BY updated_at DESC OFFSET $4 LIMIT $5",
                 [1, 'hello', 'ESCALATED', 20, 10]
             );
@@ -111,8 +122,18 @@ describe('Queries', () => {
         it('query should be called twice', (done) => {
             queries.updateBulk({
                 body: [
-                    { id: 1, title: 'A New Hope', folder: 'ESCALATED', initiator: 1 },
-                    { id: 2, title: 'The Empire Strikes Back', folder: 'ESCALATED', initiator: 1 }
+                    {
+                        id: 1,
+                        title: 'A New Hope',
+                        folder: 'ESCALATED',
+                        initiator: 1
+                    },
+                    {
+                        id: 2,
+                        title: 'The Empire Strikes Back',
+                        folder: 'ESCALATED',
+                        initiator: 1
+                    }
                 ]
             });
             expect(pool.query).toHaveBeenCalledTimes(2);
@@ -121,7 +142,12 @@ describe('Queries', () => {
         it('should be passed correct parameters', (done) => {
             queries.updateBulk({
                 body: [
-                    { id: 1, title: 'A New Hope', folder: 'ESCALATED', initiator: 1 }
+                    {
+                        id: 1,
+                        title: 'A New Hope',
+                        folder: 'ESCALATED',
+                        initiator: 1
+                    }
                 ]
             });
             expect(
@@ -135,15 +161,18 @@ describe('Queries', () => {
     });
     describe('initiators', () => {
         it('should be called', (done) => {
-            queries.initiators([1,2,3]);
+            queries.initiators([1, 2, 3]);
             expect(pool.query).toHaveBeenCalled();
             done();
         });
         it('should be passed correct parameters', (done) => {
-            queries.initiators([1,2,3]);
+            queries.initiators([1, 2, 3]);
             expect(
                 pool.query
-            ).toBeCalledWith('SELECT id, initiator FROM query WHERE id IN ($1, $2, $3)', [1, 2, 3]);
+            ).toBeCalledWith(
+                'SELECT id, initiator FROM query WHERE id IN ($1, $2, $3)',
+                [1, 2, 3]
+            );
             done();
         });
     });
@@ -157,7 +186,10 @@ describe('Queries', () => {
             queries.participants([1, 2, 3]);
             expect(
                 pool.query
-            ).toBeCalledWith('SELECT query_id, creator_id FROM message WHERE query_id IN ($1, $2, $3) GROUP BY query_id, creator_id', [1, 2, 3]);
+            ).toBeCalledWith(
+                'SELECT query_id, creator_id FROM message WHERE query_id IN ($1, $2, $3) GROUP BY query_id, creator_id',
+                [1, 2, 3]
+            );
             done();
         });
     });
@@ -171,7 +203,10 @@ describe('Queries', () => {
             queries.latestMessages([1, 2, 3]);
             expect(
                 pool.query
-            ).toBeCalledWith('SELECT * from message WHERE id IN (SELECT MAX(id) FROM message WHERE query_id IN ($1, $2, $3) GROUP BY query_id)', [1, 2, 3]);
+            ).toBeCalledWith(
+                'SELECT * from message WHERE id IN (SELECT MAX(id) FROM message WHERE query_id IN ($1, $2, $3) GROUP BY query_id)',
+                [1, 2, 3]
+            );
             done();
         });
     });
@@ -185,7 +220,10 @@ describe('Queries', () => {
             queries.labels([1, 2, 3]);
             expect(
                 pool.query
-            ).toBeCalledWith('SELECT ql.* FROM querylabel ql INNER JOIN label l ON ql.label_id = l.id WHERE ql.query_id IN ($1, $2, $3) ORDER BY l.name ASC', [1, 2, 3]);
+            ).toBeCalledWith(
+                'SELECT ql.* FROM querylabel ql INNER JOIN label l ON ql.label_id = l.id WHERE ql.query_id IN ($1, $2, $3) ORDER BY l.name ASC',
+                [1, 2, 3]
+            );
             done();
         });
     });

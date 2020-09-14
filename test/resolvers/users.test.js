@@ -8,15 +8,21 @@ const roleResolvers = require('../../resolvers/roles');
 // Mock pool
 jest.mock('../../config', () => ({
     // A mock query function
-    query: jest.fn((sql, params) =>
-        new Promise((resolve) => resolve({ rowCount: 1, rows: [{ id: 1 }] }))
+    query: jest.fn(
+        (sql, params) =>
+            new Promise((resolve) =>
+                resolve({ rowCount: 1, rows: [{ id: 1 }] })
+            )
     )
 }));
 
 // Mock roleResolvers
 jest.mock('../../resolvers/roles', () => ({
-    getRoleByCode: jest.fn((sql, params) =>
-        new Promise((resolve) => resolve({ rowCount: 1, rows: [{ id: 1 }] }))
+    getRoleByCode: jest.fn(
+        (sql, params) =>
+            new Promise((resolve) =>
+                resolve({ rowCount: 1, rows: [{ id: 1 }] })
+            )
     )
 }));
 
@@ -41,7 +47,9 @@ describe('Users', () => {
         // our requested records
         it('should be passed correct SQL including id parameter', (done) => {
             users.allUsers({ query: { user_ids: '1_2_3' } });
-            expect(pool.query).toBeCalledWith(
+            expect(
+                pool.query
+            ).toBeCalledWith(
                 'SELECT * FROM ems_user WHERE id IN ($1, $2, $3) ORDER BY name ASC',
                 [1, 2, 3]
             );
@@ -58,18 +66,25 @@ describe('Users', () => {
             users.getUser({ params: { id: 1 } });
             expect(
                 pool.query
-            ).toBeCalledWith('SELECT u.*, r.code AS role_code FROM ems_user u INNER JOIN role r ON r.id = u.role_id WHERE u.id = $1', [1]);
+            ).toBeCalledWith(
+                'SELECT u.*, r.code AS role_code FROM ems_user u INNER JOIN role r ON r.id = u.role_id WHERE u.id = $1',
+                [1]
+            );
             done();
         });
     });
     describe('getUserByProvider', () => {
         it('should be called', (done) => {
-            users.getUserByProvider({ params: { provider: 'Imperial Navy', providerId: 'TK-421' } });
+            users.getUserByProvider({
+                params: { provider: 'Imperial Navy', providerId: 'TK-421' }
+            });
             expect(pool.query).toHaveBeenCalled();
             done();
         });
         it('should be passed correct parameters', (done) => {
-            users.getUserByProvider({ params: { provider: 'Imperial Navy', providerId: 'TK-421' } });
+            users.getUserByProvider({
+                params: { provider: 'Imperial Navy', providerId: 'TK-421' }
+            });
             expect(
                 pool.query
             ).toBeCalledWith(
@@ -91,7 +106,12 @@ describe('Users', () => {
         it('should be called as an UPDATE when ID is passed', (done) => {
             users.upsertUser({
                 params: { id: 1 },
-                body: { name: 'Wilhuff Tarkin', role_id: 1, provider_meta: 'So meta', avatar: 'I see you' }
+                body: {
+                    name: 'Wilhuff Tarkin',
+                    role_id: 1,
+                    provider_meta: 'So meta',
+                    avatar: 'I see you'
+                }
             });
             expect(
                 pool.query
@@ -103,7 +123,14 @@ describe('Users', () => {
         });
         it('should be called as an INSERT when ID is not passed', async (done) => {
             await users.upsertUser({
-                body: { name: 'Stormtrooper', role_id: 1, provider: 'Imperial Navy', provider_id: 'TK-421', provider_meta: 'Terrible shot', avatar: 'stormtrooper.jpg' }
+                body: {
+                    name: 'Stormtrooper',
+                    role_id: 1,
+                    provider: 'Imperial Navy',
+                    provider_id: 'TK-421',
+                    provider_meta: 'Terrible shot',
+                    avatar: 'stormtrooper.jpg'
+                }
             });
             expect(roleResolvers.getRoleByCode).toBeCalledTimes(1);
             expect(pool.query).toBeCalledTimes(1);

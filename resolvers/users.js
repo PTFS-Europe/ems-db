@@ -11,10 +11,8 @@ const userResolvers = {
         // our requested records
         if (query.user_ids) {
             // user_ids should be a underscore delimited string of IDs
-            params = query.user_ids.split('_').map(param => parseInt(param));
-            placeholders = params.map(
-                (param, idx) => `$${idx + 1}`
-            );
+            params = query.user_ids.split('_').map((param) => parseInt(param));
+            placeholders = params.map((param, idx) => `$${idx + 1}`);
             where.push(`eu.id IN (${placeholders})`);
         }
         // If we're passed a role code we should filter on that
@@ -22,7 +20,8 @@ const userResolvers = {
             params.push(query.role_code);
             where.push(`r.code = $${params.length}`);
         }
-        let sql = 'SELECT eu.*, r.code AS role_code FROM ems_user eu, role r WHERE eu.role_id = r.id';
+        let sql =
+            'SELECT eu.*, r.code AS role_code FROM ems_user eu, role r WHERE eu.role_id = r.id';
         if (where.length > 0) {
             sql += ' AND ' + where.join(' AND ');
         }
@@ -30,25 +29,45 @@ const userResolvers = {
         return pool.query(sql, params);
     },
     getUser: ({ params }) =>
-        pool.query('SELECT u.*, r.code AS role_code FROM ems_user u INNER JOIN role r ON r.id = u.role_id WHERE u.id = $1', [params.id]),
+        pool.query(
+            'SELECT u.*, r.code AS role_code FROM ems_user u INNER JOIN role r ON r.id = u.role_id WHERE u.id = $1',
+            [params.id]
+        ),
     getUserByProvider: ({ params }) =>
-        pool.query('SELECT * FROM ems_user WHERE provider = $1 AND provider_id = $2', [params.provider, params.providerId]),
+        pool.query(
+            'SELECT * FROM ems_user WHERE provider = $1 AND provider_id = $2',
+            [params.provider, params.providerId]
+        ),
     upsertUser: ({ params, body }) => {
         // If we have an ID, we're updating
         if (params && params.id) {
             return pool.query(
                 'UPDATE ems_user SET name = $1, role_id = $2, provider_meta = $3, avatar = $4, updated_at = NOW() WHERE id = $5 RETURNING *',
-                [body.name, body.role_id, body.provider_meta, body.avatar, params.id]
+                [
+                    body.name,
+                    body.role_id,
+                    body.provider_meta,
+                    body.avatar,
+                    params.id
+                ]
             );
         } else {
             // Give the new user the CUSTOMER role
-            return roleResolvers.getRoleByCode({ params: { code: 'CUSTOMER' } })
+            return roleResolvers
+                .getRoleByCode({ params: { code: 'CUSTOMER' } })
                 .then((roles) => {
                     if (roles.rowCount === 1) {
                         const role = roles.rows[0].id;
                         return pool.query(
                             'INSERT INTO ems_user VALUES (default, $1, $2, NOW(), NOW(), $3, $4, $5, $6) RETURNING *',
-                            [body.name, role, body.provider, body.provider_id, body.provider_meta, body.avatar]
+                            [
+                                body.name,
+                                role,
+                                body.provider,
+                                body.provider_id,
+                                body.provider_meta,
+                                body.avatar
+                            ]
                         );
                     }
                 });
@@ -62,7 +81,8 @@ const userResolvers = {
         avatar
     }) => {
         // Check if this user already exists
-        return userResolvers.getUserByProvider({ params: { provider, providerId } })
+        return userResolvers
+            .getUserByProvider({ params: { provider, providerId } })
             .then((result) => {
                 if (result.rowCount === 1) {
                     // User exists, update them

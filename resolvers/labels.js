@@ -29,7 +29,7 @@ const labelResolvers = {
         // Fetch all the labels and all this user's queries
         const [allLabels, allQueries] = await Promise.all([
             labelResolvers.allLabels(),
-            queries.allQueries({ query: {}, user }),
+            queries.allQueries({ query: {}, user })
         ]);
         // Now retrieve all the label associations for this user's
         // queries

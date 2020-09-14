@@ -31,16 +31,15 @@ describe('Roles', () => {
     });
     describe('getRoleByCode', () => {
         // Make the call
-        roles.getRoleByCode({params: { code: '2187'}});
+        roles.getRoleByCode({ params: { code: '2187' } });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
             done();
         });
         it('should be passed correct SQL', (done) => {
-            expect(pool.query).toBeCalledWith(
-                'SELECT * FROM role WHERE code = $1',
-                ['2187']
-            );
+            expect(
+                pool.query
+            ).toBeCalledWith('SELECT * FROM role WHERE code = $1', ['2187']);
             done();
         });
     });
@@ -48,7 +47,11 @@ describe('Roles', () => {
         // Make the call *with an ID*
         roles.upsertRole({
             params: { id: 1 },
-            body: { name: 'My updated role name', code: 'UPDATED_CODE', type: 'UPDATED_TYPE' }
+            body: {
+                name: 'My updated role name',
+                code: 'UPDATED_CODE',
+                type: 'UPDATED_TYPE'
+            }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
