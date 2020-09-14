@@ -24,7 +24,7 @@ const messageResolvers = {
         pool.query('SELECT * FROM message WHERE id = $1', [params.id]),
     upsertMessage: async ({ params, body, user }) => {
         // If we have an ID, we're updating
-        if (params.hasOwnProperty('id') && params.id) {
+        if (Object.prototype.hasOwnProperty.call(params, 'id') && params.id) {
             return pool.query(
                 'UPDATE message SET content = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
                 [body.content, params.id]

@@ -4,7 +4,7 @@ const pool = require('../config');
 // from queryResolvers.upsertQuery & queryResolvers.updateBulk
 const upsertQuery = ({ params, body }) => {
     // If we have an ID, we're updating
-    if (params.hasOwnProperty('id') && params.id) {
+    if (Object.prototype.hasOwnProperty.call(params, 'id') && params.id) {
         return pool.query(
             'UPDATE query SET title = $1, folder = $2, initiator = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
             [body.title, body.folder, body.initiator, params.id]

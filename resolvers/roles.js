@@ -9,7 +9,7 @@ const roleResolvers = {
         pool.query('SELECT * FROM role WHERE code = $1', [params.code]),
     upsertRole: ({ params, body }) => {
         // If we have an ID, we're updating
-        if (params.hasOwnProperty('id') && params.id) {
+        if (Object.prototype.hasOwnProperty.call(params, 'id') && params.id) {
             return pool.query(
                 'UPDATE role SET name = $1, code = $2, type = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
                 [body.name, body.code, body.type, params.id]

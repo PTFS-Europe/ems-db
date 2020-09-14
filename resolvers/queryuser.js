@@ -31,8 +31,8 @@ const queryuserResolvers = {
     },
     // Upsert a queryuser row
     upsertQueryUser: ({ query_id, user_id }) => {
-        // This query attempts to insert a new row into queryuser, if it conflicts
-        // it increments the existing row
+        // This query attempts to insert a new row into queryuser,
+        // if it conflicts it increments the existing row
         const sql =
             'INSERT INTO queryuser VALUES ($1, $2, NOW(), NOW(), 0, 0) ON CONFLICT ON CONSTRAINT userquery_pkey DO UPDATE SET unseen_count = queryuser.unseen_count + 1 WHERE queryuser.query_id = $3 AND queryuser.user_id = $4';
         return pool.query(sql, [query_id, user_id, query_id, user_id]);
@@ -121,7 +121,7 @@ const queryuserResolvers = {
     // Get unseen counts for all participants of a query
     getParticipantUnseenCounts: ({ query_id }) => {
         return pool.query(
-            `SELECT user_id, most_recent_seen, unseen_count FROM queryuser WHERE query_id = $1`,
+            'SELECT user_id, most_recent_seen, unseen_count FROM queryuser WHERE query_id = $1',
             [query_id]
         );
     }

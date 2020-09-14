@@ -9,7 +9,7 @@ const roleResolvers = require('../../resolvers/roles');
 jest.mock('../../config', () => ({
     // A mock query function
     query: jest.fn(
-        (sql, params) =>
+        () =>
             new Promise((resolve) =>
                 resolve({ rowCount: 1, rows: [{ id: 1 }] })
             )
@@ -19,7 +19,7 @@ jest.mock('../../config', () => ({
 // Mock roleResolvers
 jest.mock('../../resolvers/roles', () => ({
     getRoleByCode: jest.fn(
-        (sql, params) =>
+        () =>
             new Promise((resolve) =>
                 resolve({ rowCount: 1, rows: [{ id: 1 }] })
             )
@@ -148,7 +148,9 @@ describe('Users', () => {
                 new Promise((resolve) => resolve())
             ),
             getUserByProvider: jest.fn((sql, params) => 
-                new Promise((resolve) => resolve({rowCount: 1, rows: [{id: 1}]}))
+                new Promise(
+                    (resolve) => resolve({rowCount: 1, rows: [{id: 1}]})
+                )
             )
         }));
         it('should follow the update path', async (done) => {

@@ -7,7 +7,7 @@ const pool = require('../../config');
 // Mock pool
 jest.mock('../../config', () => ({
     // A mock query function
-    query: jest.fn((sql, params) => {
+    query: jest.fn(() => {
         new Promise((resolve) => {
             return resolve(true);
         });
@@ -44,7 +44,7 @@ describe('Queries', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                "SELECT q.* FROM query q, querylabel ql WHERE q.id = ql.query_id AND ql.label_id = $1 AND title ILIKE '%' || $2 || '%' AND folder = $3 ORDER BY updated_at DESC OFFSET $4 LIMIT $5",
+                'SELECT q.* FROM query q, querylabel ql WHERE q.id = ql.query_id AND ql.label_id = $1 AND title ILIKE "%" || $2 || "%" AND folder = $3 ORDER BY updated_at DESC OFFSET $4 LIMIT $5',
                 [1, 'hello', 'ESCALATED', 20, 10]
             );
             done();

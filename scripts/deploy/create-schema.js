@@ -10,7 +10,7 @@ const start = function (argv) {
     dbTpl = dbTpl.replace(/insert_db_schema/g, argv.i);
     fs.writeFileSync(dbOut, dbTpl, 'utf8');
     if (!fs.existsSync(dbOut)) {
-        throw new Error(`Unable to create SQL file`);
+        throw new Error('Unable to create SQL file');
     }
 
     // Use the file and create the user & schema
@@ -30,7 +30,7 @@ const start = function (argv) {
         throw new Error(`Create schema & user failed: ${createSchemaOut}`);
     } else {
         if (createSchemaOut.match(/failed/)) {
-            throw new Error(`Unable to populate DB user and perms`);
+            throw new Error('Unable to populate DB user and perms');
         }
     }
     return true;
