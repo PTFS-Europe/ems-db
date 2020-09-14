@@ -105,3 +105,6 @@ dist
 
 # App specific
 database.json
+
+# IDE specific settings
+/.vscode
