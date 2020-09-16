@@ -1,5 +1,7 @@
 const pool = require('../config');
 
+const userResolvers = require('./users');
+
 // We refactor this out of the resolvers object so we can reference it
 // from queryResolvers.upsertQuery & queryResolvers.updateBulk
 const upsertQuery = ({ params, body }) => {
@@ -91,6 +93,18 @@ const queryResolvers = {
     },
     // The following functions return data that is based on a query,
     // as such they don't receive the request object from the API
+    //
+    // Associated is all users who can access the passed queries, either people
+    // who are directly connected with them or staff, who can see any query.
+    // Returns a promise resolving to an array of user IDs
+    associated: async (query_ids) => {
+        const participants = await queryResolvers.participants(query_ids);
+        const allStaff = await userResolvers.allStaff();
+        let deDup = {};
+        participants.rows.forEach((pRow) => (deDup[pRow.creator_id] = 1));
+        allStaff.rows.forEach((sRow) => (deDup[sRow.id] = 1));
+        return Object.keys(deDup).map((key) => parseInt(key));
+    },
     initiators: (query_ids) => {
         const placeholders = query_ids
             .map((param, idx) => `$${idx + 1}`)

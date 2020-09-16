@@ -28,6 +28,9 @@ const userResolvers = {
         sql += ' ORDER BY name ASC';
         return pool.query(sql, params);
     },
+    allStaff: () => {
+        return userResolvers.allUsers({ query: { role_code: 'STAFF' } });
+    },
     getUser: ({ params }) =>
         pool.query(
             'SELECT u.*, r.code AS role_code FROM ems_user u INNER JOIN role r ON r.id = u.role_id WHERE u.id = $1',

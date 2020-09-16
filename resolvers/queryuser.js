@@ -1,6 +1,5 @@
 const pool = require('../config');
 const queries = require('./queries');
-const users = require('./users');
 
 const queryuserResolvers = {
     updateMostRecentSeen: async ({ params, body }) => {
@@ -42,19 +41,14 @@ const queryuserResolvers = {
     upsertQueryUsers: async ({ query_id, creator }) => {
         // Determine who needs adding / updating. This needs to be anyone
         // who can see this query, i.e. participants & STAFF, except the sender
-        const participants = await queries.participants([query_id]);
-        const staff = await users.allUsers({ query: { role_code: 'STAFF' } });
-        let upsertDeDup = {};
-        participants.rows.forEach((pRow) => (upsertDeDup[pRow.creator_id] = 1));
-        staff.rows.forEach((sRow) => (upsertDeDup[sRow.id] = 1));
+        const users = await queries.associated([query_id]);
         // Remove the sender from the list of users needing
         // creating / updating
-        delete upsertDeDup[creator];
-        const toUpsert = Object.keys(upsertDeDup);
-        for (let i = 0; i < toUpsert.length; i++) {
+        delete users[creator];
+        for (let i = 0; i < users.length; i++) {
             await queryuserResolvers.upsertQueryUser({
                 query_id,
-                user_id: toUpsert[i]
+                user_id: users[i]
             });
         }
     },
