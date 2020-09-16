@@ -99,9 +99,11 @@ const queryResolvers = {
     // Returns a promise resolving to an array of user IDs
     associated: async (query_ids) => {
         const participants = await queryResolvers.participants(query_ids);
+        const initiators = await queryResolvers.initiators(query_ids);
         const allStaff = await userResolvers.allStaff();
         let deDup = {};
         participants.rows.forEach((pRow) => (deDup[pRow.creator_id] = 1));
+        initiators.rows.forEach((iRow) => (deDup[iRow.initiator] = 1));
         allStaff.rows.forEach((sRow) => (deDup[sRow.id] = 1));
         return Object.keys(deDup).map((key) => parseInt(key));
     },
