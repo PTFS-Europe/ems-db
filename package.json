@@ -23,6 +23,7 @@
     },
     "homepage": "https://github.com/PTFS-Europe/ems-db#readme",
     "dependencies": {
+        "bcrypt": "^5.0.0",
         "db-migrate": "^0.11.6",
         "db-migrate-pg": "^1.0.0",
         "node-postgres": "^0.1.4",

@@ -1,5 +1,7 @@
 const pool = require('../config');
 
+const bcrypt = require('bcrypt');
+
 const roleResolvers = require('./roles');
 
 const userResolvers = {
@@ -45,9 +47,10 @@ const userResolvers = {
         // If we have an ID, we're updating
         if (params && params.id) {
             return pool.query(
-                'UPDATE ems_user SET name = $1, role_id = $2, provider_meta = $3, avatar = $4, updated_at = NOW() WHERE id = $5 RETURNING *',
+                'UPDATE ems_user SET name = $1, email = $2, role_id = $3, provider_meta = $4, avatar = $5, updated_at = NOW() WHERE id = $6 RETURNING *',
                 [
                     body.name,
+                    body.email,
                     body.role_id,
                     body.provider_meta,
                     body.avatar,
@@ -62,9 +65,10 @@ const userResolvers = {
                     if (roles.rowCount === 1) {
                         const role = roles.rows[0].id;
                         return pool.query(
-                            'INSERT INTO ems_user VALUES (default, $1, $2, NOW(), NOW(), $3, $4, $5, $6) RETURNING *',
+                            'INSERT INTO ems_user (id, name, email, role_id, created_at, updated_at, provider, provider_id, provider_meta, avatar) VALUES (default, $1, $2, $3, NOW(), NOW(), $4, $5, $6, $7) RETURNING *',
                             [
                                 body.name,
+                                body.email,
                                 role,
                                 body.provider,
                                 body.provider_id,
@@ -81,8 +85,13 @@ const userResolvers = {
         providerId,
         providerMeta,
         name,
+        email,
         avatar
     }) => {
+        // If we've been provided with an email, we need to hash it
+        if (email) {
+            email = bcrypt.hashSync(email, 10);
+        }
         // Check if this user already exists
         return userResolvers
             .getUserByProvider({ params: { provider, providerId } })
@@ -96,6 +105,7 @@ const userResolvers = {
                         },
                         body: {
                             name,
+                            email,
                             role_id: user.role_id,
                             provider_meta: providerMeta,
                             avatar,
@@ -106,6 +116,7 @@ const userResolvers = {
                     return userResolvers.upsertUser({
                         body: {
                             name,
+                            email,
                             provider,
                             provider_id: providerId,
                             provider_meta: providerMeta,
