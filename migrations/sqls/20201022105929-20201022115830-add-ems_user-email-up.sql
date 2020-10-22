@@ -1,0 +1,1 @@
+ALTER TABLE ems_user ADD COLUMN email TEXT;
