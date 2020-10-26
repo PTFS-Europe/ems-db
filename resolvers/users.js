@@ -1,7 +1,6 @@
 const pool = require('../config');
 
-const bcrypt = require('bcrypt');
-
+const encryption = require('../helpers/encryption');
 const roleResolvers = require('./roles');
 
 const userResolvers = {
@@ -80,7 +79,7 @@ const userResolvers = {
                 });
         }
     },
-    upsertUserByProviderId: ({
+    upsertUserByProviderId: async ({
         provider,
         providerId,
         providerMeta,
@@ -88,9 +87,9 @@ const userResolvers = {
         email,
         avatar
     }) => {
-        // If we've been provided with an email, we need to hash it
+        // If we've been provided with an email, we need to encrypt it
         if (email) {
-            email = bcrypt.hashSync(email, 10);
+            email = await encryption.encrypt(email);
         }
         // Check if this user already exists
         return userResolvers
