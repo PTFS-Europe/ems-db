@@ -2,7 +2,7 @@
     "super": {
         "driver": "pg",
         "user": "ems",
-        "password": "",
+        "password": ""
     },
     "test": {
         "driver": "pg",
