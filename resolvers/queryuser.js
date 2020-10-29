@@ -44,7 +44,8 @@ const queryuserResolvers = {
         const users = await queries.associated([query_id]);
         // Remove the sender from the list of users needing
         // creating / updating
-        delete users[creator];
+        const creatorIdx = users.findIndex(u => u === creator);
+        users.splice(creatorIdx, 1);
         for (let i = 0; i < users.length; i++) {
             await queryuserResolvers.upsertQueryUser({
                 query_id,
