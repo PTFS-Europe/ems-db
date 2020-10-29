@@ -23,7 +23,6 @@ const encryption = {
     decrypt: async (toDecryptWithNonce) => {
         await _sodium.ready;
         const sodium = _sodium;
-
         const key = sodium.from_base64(process.env.KEY);
         toDecryptWithNonce = sodium.from_base64(toDecryptWithNonce);
 
@@ -33,7 +32,8 @@ const encryption = {
 
         const nonce = toDecryptWithNonce.slice(0, sodium.crypto_secretbox_NONCEBYTES);
         const ciphertext = toDecryptWithNonce.slice(sodium.crypto_secretbox_NONCEBYTES);
-        return sodium.crypto_secretbox_open_easy(ciphertext, nonce, key);
+        const decrypted = sodium.crypto_secretbox_open_easy(ciphertext, nonce, key);
+        return sodium.to_string(decrypted);
     }
 };
 

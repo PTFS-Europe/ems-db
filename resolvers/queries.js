@@ -65,11 +65,11 @@ const queryResolvers = {
             sql += ' WHERE ' + where.join(' AND ');
         }
         sql += ' ORDER BY updated_at DESC';
-        if (query.offset) {
+        if (query.offset !== null) {
             params.push(query.offset);
             sql += ` OFFSET $${params.length}`;
         }
-        if (query.limit) {
+        if (query.limit !== null) {
             params.push(query.limit);
             sql += ` LIMIT $${params.length}`;
         }

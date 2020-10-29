@@ -37,6 +37,7 @@ const userResolvers = {
             'SELECT u.*, r.code AS role_code FROM ems_user u INNER JOIN role r ON r.id = u.role_id WHERE u.id = $1',
             [params.id]
         ),
+    getUserEmail: async (encrypted) => await encryption.decrypt(encrypted),
     getUserByProvider: ({ params }) =>
         pool.query(
             'SELECT * FROM ems_user WHERE provider = $1 AND provider_id = $2',

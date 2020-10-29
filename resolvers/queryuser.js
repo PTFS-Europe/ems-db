@@ -2,6 +2,7 @@ const pool = require('../config');
 const queries = require('./queries');
 
 const queryuserResolvers = {
+    allUserQueries: async () => pool.query('SELECT * FROM queryuser'),
     updateMostRecentSeen: async ({ params, body }) => {
         await pool.query(
             'UPDATE queryuser SET most_recent_seen = $1 WHERE query_id=$2 AND user_id=$3 RETURNING *',
@@ -52,6 +53,20 @@ const queryuserResolvers = {
                 user_id: users[i]
             });
         }
+    },
+    updateMostRecentDigests: async (queries) => {
+        for (const queryIt of queries) {
+            await queryuserResolvers.updateMostRecentDigest({
+                query_id: queryIt.query.id,
+                user_id: queryIt.query.userId,
+                new_value: queryIt.query.highMark
+            });
+        }
+        return Promise.resolve();
+    },
+    updateMostRecentDigest: async ({ query_id, user_id, new_value }) => {
+        const sql = 'UPDATE queryuser SET most_recent_digest = $1, updated_at = NOW() WHERE query_id = $2 AND user_id = $3';
+        return pool.query(sql, [new_value, query_id, user_id]);
     },
     // Decrement the unseen count on a single query / user
     decrementUnseenCount: ({ query_id, user_id }) => {
