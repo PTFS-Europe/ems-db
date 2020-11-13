@@ -7,11 +7,11 @@ const pool = require('../../config');
 // Mock pool
 jest.mock('../../config', () => ({
     // A mock query function
-    query: jest.fn(() => {
+    query: jest.fn(() => 
         new Promise((resolve) => {
-            return resolve(true);
-        });
-    })
+            return resolve({ rows: [{ rowCount: 0 }]});
+        })
+    )
 }));
 
 describe('UserQuery', () => {

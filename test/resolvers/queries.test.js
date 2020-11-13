@@ -18,15 +18,15 @@ describe('Queries', () => {
     beforeEach(() => jest.clearAllMocks());
     describe('allQueries', () => {
         it('should be called', (done) => {
-            queries.allQueries({ query: {} });
+            queries.allQueries({ query: {}, user: {} });
             expect(pool.query).toHaveBeenCalled();
             done();
         });
         it('should be passed correct SQL', (done) => {
-            queries.allQueries({ query: {} });
+            queries.allQueries({ query: {}, user: { id: 1, role_code: 'CUSTOMER'} });
             expect(pool.query).toBeCalledWith(
-                'SELECT q.* FROM query q ORDER BY updated_at DESC',
-                []
+                'SELECT q.* FROM query q WHERE initiator = $1 ORDER BY updated_at DESC',
+                [1]
             );
             done();
         });
@@ -34,18 +34,19 @@ describe('Queries', () => {
         it('should be passed correct SQL including parameters', (done) => {
             queries.allQueries({
                 query: {
-                    title: 'hello',
+                    title: 'The Clone Wars',
                     offset: 20,
                     limit: 10,
                     folder: 'ESCALATED',
                     label: 1
-                }
+                },
+                user: {id: 2, role_code: 'CUSTOMER'}
             });
             expect(
                 pool.query
             ).toBeCalledWith(
-                'SELECT q.* FROM query q, querylabel ql WHERE q.id = ql.query_id AND ql.label_id = $1 AND title ILIKE "%" || $2 || "%" AND folder = $3 ORDER BY updated_at DESC OFFSET $4 LIMIT $5',
-                [1, 'hello', 'ESCALATED', 20, 10]
+               "SELECT q.* FROM query q, querylabel ql WHERE q.id = ql.query_id AND ql.label_id = $1 AND folder = $2 AND title ILIKE '%' || $3 || '%' AND initiator = $4 ORDER BY updated_at DESC OFFSET $5 LIMIT $6",
+                [1, 'ESCALATED', 'The Clone Wars', 2, 20, 10]
             );
             done();
         });

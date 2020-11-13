@@ -59,17 +59,18 @@ const queryResolvers = {
         }
         // Only return a user's own queries if they're not STAFF
         if (user.role_code !== 'STAFF') {
-            where.push(`initiator = ${user.id}`);
+            params.push(user.id);
+            where.push(`initiator = $${params.length}`);
         }
         if (where.length > 0) {
             sql += ' WHERE ' + where.join(' AND ');
         }
         sql += ' ORDER BY updated_at DESC';
-        if (query.offset !== null) {
+        if (query.offset && query.offset !== null) {
             params.push(query.offset);
             sql += ` OFFSET $${params.length}`;
         }
-        if (query.limit !== null) {
+        if (query.limit && query.limit !== null) {
             params.push(query.limit);
             sql += ` LIMIT $${params.length}`;
         }

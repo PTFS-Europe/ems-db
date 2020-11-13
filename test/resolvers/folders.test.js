@@ -24,7 +24,7 @@ describe('Folders', () => {
         });
         it('should be passed correct SQL', (done) => {
             expect(pool.query).toBeCalledWith(
-                'SELECT f.*, (SELECT COUNT (*) FROM query q WHERE q.folder = f.code) AS count FROM folder f ORDER BY name ASC'
+                'SELECT * FROM folder f ORDER BY name ASC'
             );
             done();
         });

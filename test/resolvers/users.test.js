@@ -34,10 +34,10 @@ describe('Users', () => {
             expect(pool.query).toHaveBeenCalled();
             done();
         });
-        it('should be passed correct SQL', (done) => {
+        it('should be passed correct SQL with no parameters', (done) => {
             users.allUsers({ query: {} });
             expect(pool.query).toBeCalledWith(
-                'SELECT * FROM ems_user ORDER BY name ASC',
+                'SELECT eu.*, r.code AS role_code FROM ems_user eu, role r WHERE eu.role_id = r.id ORDER BY name ASC',
                 []
             );
             done();
@@ -50,8 +50,19 @@ describe('Users', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'SELECT * FROM ems_user WHERE id IN ($1, $2, $3) ORDER BY name ASC',
+                'SELECT eu.*, r.code AS role_code FROM ems_user eu, role r WHERE eu.role_id = r.id AND eu.id IN ($1,$2,$3) ORDER BY name ASC',
                 [1, 2, 3]
+            );
+            done();
+        });
+        // Pass a role code
+        it('should be passed correct SQL including role_code parameter', (done) => {
+            users.allUsers({ query: { role_code: 'STAFF' } });
+            expect(
+                pool.query
+            ).toBeCalledWith(
+                'SELECT eu.*, r.code AS role_code FROM ems_user eu, role r WHERE eu.role_id = r.id AND r.code = $1 ORDER BY name ASC',
+                ['STAFF']
             );
             done();
         });
@@ -108,6 +119,7 @@ describe('Users', () => {
                 params: { id: 1 },
                 body: {
                     name: 'Wilhuff Tarkin',
+                    email: 'wil@deathstar.com',
                     role_id: 1,
                     provider_meta: 'So meta',
                     avatar: 'I see you'
@@ -116,8 +128,8 @@ describe('Users', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-                'UPDATE ems_user SET name = $1, role_id = $2, provider_meta = $3, avatar = $4, updated_at = NOW() WHERE id = $5 RETURNING *',
-                ['Wilhuff Tarkin', 1, 'So meta', 'I see you', 1]
+                'UPDATE ems_user SET name = $1, email = $2, role_id = $3, provider_meta = $4, avatar = $5, updated_at = NOW() WHERE id = $6 RETURNING *',
+                ['Wilhuff Tarkin', 'wil@deathstar.com', 1, 'So meta', 'I see you', 1]
             );
             done();
         });

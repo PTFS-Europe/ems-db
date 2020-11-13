@@ -7,11 +7,11 @@ const pool = require('../../config');
 // Mock pool
 jest.mock('../../config', () => ({
     // A mock query function
-    query: jest.fn(() => {
+    query: jest.fn(() => 
         new Promise((resolve) => {
-            return resolve(true);
-        });
-    })
+            return resolve({ rows: [{ rowcount: 1 }] });
+        })
+    )
 }));
 
 describe('Messages', () => {
@@ -66,7 +66,8 @@ describe('Messages', () => {
         // Make the call *with an ID*
         messages.upsertMessage({
             params: { id: 1 },
-            body: { content: 'Fred' }
+            body: { content: 'Fred', query_id: 3 },
+            user: { id: 2 }
         });
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
@@ -84,7 +85,8 @@ describe('Messages', () => {
         // Make the call *without an ID*
         messages.upsertMessage({
             params: {},
-            body: { query_id: 1, creator_id: 1, content: 'Fred' }
+            body: { query_id: 1, creator_id: 1, content: 'Fred' },
+            user: { id: 2 }
         });
         it('should be called as an INSERT when ID is not passed', (done) => {
             expect(
@@ -98,7 +100,7 @@ describe('Messages', () => {
     });
     describe('deleteMessage', () => {
         // Make the call
-        messages.deleteMessage({ params: { id: 1 } });
+        messages.deleteMessage({ params: { id: 1 } }, { query_id: 1, creator_id: 2, id: 3 } );
         it('should be called', (done) => {
             expect(pool.query).toHaveBeenCalled();
             done();

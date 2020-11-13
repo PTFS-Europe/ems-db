@@ -51,21 +51,19 @@ const messageResolvers = {
         await queryuser.decrementMessageDelete({ message });
         return ret;
     },
-    insertUpload: ({ filename, originalName, queryId, userId }) => {
-        return pool
+    insertUpload: async ({ filename, originalName, queryId, userId }) => {
+        const ret = await pool
             .query(
                 'INSERT INTO message (query_id, creator_id, updated_at, filename, originalname) VALUES ($1, $2, NOW(), $3, $4) RETURNING *',
                 [queryId, userId, filename, originalName]
-            )
-            .then(async (result) => {
-                // Add / update queryuser relationships for those
-                // that need it
-                await queryuser.upsertQueryUsers({
-                    query_id: queryId,
-                    creator: userId
-                });
-                return result;
+            );
+            // Add / update queryuser relationships for those
+            // that need it
+            await queryuser.upsertQueryUsers({
+                query_id: queryId,
+                creator: userId
             });
+            return ret;
     }
 };
 
