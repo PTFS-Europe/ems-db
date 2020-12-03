@@ -135,6 +135,12 @@ const queryResolvers = {
             .join(', ');
         const sql = `SELECT ql.* FROM querylabel ql INNER JOIN label l ON ql.label_id = l.id WHERE ql.query_id IN (${placeholders}) ORDER BY l.name ASC`;
         return pool.query(sql, query_ids);
+    },
+    // Return queries that have only been contributed to by one user
+    unhandledQueries: () => {
+        return pool.query(
+            'SELECT * FROM query WHERE id IN (SELECT query_id FROM (SELECT query_id, creator_id FROM message GROUP BY query_id, creator_id) AS nested GROUP BY query_id HAVING COUNT(*) = 1)'
+        );
     }
 };
 

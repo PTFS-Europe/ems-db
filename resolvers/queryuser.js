@@ -32,9 +32,9 @@ const queryuserResolvers = {
     // Upsert a queryuser row
     upsertQueryUser: ({ query_id, user_id }) => {
         // This query attempts to insert a new row into queryuser,
-        // if it conflicts it increments the existing row
+        // if it conflicts it increments unseen_count on the existing row
         const sql =
-            'INSERT INTO queryuser VALUES ($1, $2, NOW(), NOW(), 0, 0) ON CONFLICT ON CONSTRAINT userquery_pkey DO UPDATE SET unseen_count = queryuser.unseen_count + 1 WHERE queryuser.query_id = $3 AND queryuser.user_id = $4';
+            'INSERT INTO queryuser VALUES ($1, $2, NOW(), NOW(), 0, 0, 0) ON CONFLICT ON CONSTRAINT userquery_pkey DO UPDATE SET unseen_count = queryuser.unseen_count + 1 WHERE queryuser.query_id = $3 AND queryuser.user_id = $4';
         return pool.query(sql, [query_id, user_id, query_id, user_id]);
     },
     // Upsert queryuser rows for a  given query for all users except
@@ -56,17 +56,26 @@ const queryuserResolvers = {
     },
     updateMostRecentDigests: async (queries) => {
         for (const queryIt of queries) {
-            await queryuserResolvers.updateMostRecentDigest({
+            await queryuserResolvers.upsertCounts({
                 query_id: queryIt.query.id,
                 user_id: queryIt.query.userId,
-                new_value: queryIt.query.highMark
+                most_recent_digest: queryIt.query.highMark
             });
         }
         return Promise.resolve();
     },
-    updateMostRecentDigest: async ({ query_id, user_id, new_value }) => {
-        const sql = 'UPDATE queryuser SET most_recent_digest = $1, updated_at = NOW() WHERE query_id = $2 AND user_id = $3';
-        return pool.query(sql, [new_value, query_id, user_id]);
+    upsertCounts: async ({
+        query_id,
+        user_id,
+        most_recent_seen = 0,
+        unseen_count = 0,
+        most_recent_digest = 0
+    }) => {
+        const sql = 'INSERT INTO queryuser VALUES ($4, $5, NOW(), NOW(), $1, $2, $3) ON CONFLICT ON CONSTRAINT userquery_pkey DO UPDATE SET most_recent_seen = $1, unseen_count = $2, most_recent_digest = $3 WHERE queryuser.query_id = $4 AND queryuser.user_id = $5';
+        return pool.query(
+            sql,
+            [ most_recent_seen, unseen_count, most_recent_digest, query_id, user_id ]
+        );
     },
     // Decrement the unseen count on a single query / user
     decrementUnseenCount: ({ query_id, user_id }) => {
@@ -94,7 +103,7 @@ const queryuserResolvers = {
     // unseen_count decremented
     getUsersToDecrement: async ({ query_id, exclude, most_recent_seen }) => {
         // Get all users involved in this query
-        const toDecrement = await queryuserResolvers.getParticipantUnseenCounts(
+        const toDecrement = await queryuserResolvers.getParticipantCounts(
             { query_id }
         );
         return toDecrement.rows
@@ -128,10 +137,10 @@ const queryuserResolvers = {
             parameters
         );
     },
-    // Get unseen counts for all participants of a query
-    getParticipantUnseenCounts: ({ query_id }) => {
+    // Get counts for all participants of a query
+    getParticipantCounts: ({ query_id }) => {
         return pool.query(
-            'SELECT user_id, most_recent_seen, unseen_count FROM queryuser WHERE query_id = $1',
+            'SELECT user_id, most_recent_seen, unseen_count, most_recent_digest FROM queryuser WHERE query_id = $1',
             [query_id]
         );
     }
