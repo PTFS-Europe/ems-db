@@ -30,7 +30,7 @@ describe('Queries', () => {
             );
             done();
         });
-        // Pass title, offset, limit, folder and label parameters
+        // Pass title, offset, limit, calculated folder and label parameters
         it('should be passed correct SQL including parameters', (done) => {
             queries.allQueries({
                 query: {
@@ -45,8 +45,56 @@ describe('Queries', () => {
             expect(
                 pool.query
             ).toBeCalledWith(
-               "SELECT q.* FROM query q, querylabel ql WHERE q.id = ql.query_id AND ql.label_id = $1 AND folder = $2 AND title ILIKE '%' || $3 || '%' AND initiator = $4 ORDER BY updated_at DESC OFFSET $5 LIMIT $6",
+                'SELECT q.* FROM query q, querylabel ql WHERE q.id = ql.query_id AND ql.label_id = $1 AND folder = $2 AND title ILIKE \'%\' || $3 || \'%\' AND initiator = $4 ORDER BY updated_at DESC OFFSET $5 LIMIT $6',
                 [1, 'ESCALATED', 'The Clone Wars', 2, 20, 10]
+            );
+            done();
+        });
+        // Pass ALL_QUERIES folder parameter
+        it('should be passed correct SQL (ALL_QUERIES)', (done) => {
+            queries.allQueries({
+                query: {
+                    title: 'The Clone Wars',
+                    folder: 'ALL_QUERIES'
+                },
+                user: {id: 2, role_code: 'CUSTOMER'}
+            });
+            expect(
+                pool.query
+            ).toBeCalledWith(
+                'SELECT q.* FROM query q, queryuser qu WHERE q.id = qu.query_id AND qu.user_id = $1 AND qu.unseen_count = 0 AND title ILIKE \'%\' || $2 || \'%\' AND initiator = $3 ORDER BY updated_at DESC',
+                [2, 'The Clone Wars', 2]
+            );
+            done();
+        });
+        // Pass UNREAD folder parameter
+        it('should be passed correct SQL (UNREAD)', (done) => {
+            queries.allQueries({
+                query: {
+                    title: 'The Clone Wars',
+                    folder: 'UNREAD'
+                },
+                user: {id: 2, role_code: 'CUSTOMER'}
+            });
+            expect(
+                pool.query
+            ).toBeCalledWith(
+                'SELECT q.* FROM query q, queryuser qu WHERE q.id = qu.query_id AND qu.user_id = $1 AND qu.unseen_count > 0 AND title ILIKE \'%\' || $2 || \'%\' AND initiator = $3 ORDER BY updated_at DESC',
+                [2, 'The Clone Wars', 2]
+            );
+            done();
+        });
+        // No filters
+        it('should be passed correct SQL (No filters)', (done) => {
+            queries.allQueries({
+                user: { id: 2, role_code: 'STAFF' },
+                query: {}
+            });
+            expect(
+                pool.query
+            ).toBeCalledWith(
+                'SELECT q.* FROM query q ORDER BY updated_at DESC',
+                []
             );
             done();
         });
@@ -224,6 +272,22 @@ describe('Queries', () => {
             ).toBeCalledWith(
                 'SELECT ql.* FROM querylabel ql INNER JOIN label l ON ql.label_id = l.id WHERE ql.query_id IN ($1, $2, $3) ORDER BY l.name ASC',
                 [1, 2, 3]
+            );
+            done();
+        });
+    });
+    describe('unhandledQueries', () => {
+        it('should be called', (done) => {
+            queries.unhandledQueries();
+            expect(pool.query).toHaveBeenCalled();
+            done();
+        });
+        it('should be called with the correct SQL', (done) => {
+            queries.unhandledQueries();
+            expect(
+                pool.query
+            ).toBeCalledWith(
+                'SELECT * FROM query WHERE id IN (SELECT query_id FROM (SELECT query_id, creator_id FROM message GROUP BY query_id, creator_id) AS nested GROUP BY query_id HAVING COUNT(*) = 1)'
             );
             done();
         });

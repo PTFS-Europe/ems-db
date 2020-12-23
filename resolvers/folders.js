@@ -23,17 +23,27 @@ const folderResolvers = {
     },
     deleteFolder: ({ params }) =>
         pool.query('DELETE FROM folder WHERE id = $1', [params.id]),
-    folderCounts: async ({ user }) => {
+    // If we're being tested, the testing function will pass in mocked
+    // versions of allFolders, allQueries & getUserUnseenCounts
+    // so we accept those, or fall back to the real ones if they are not passed
+    // See https://github.com/magicmark/jest-how-do-i-mock-x/blob/master/src/function-in-same-module/README.md
+    // for details on this DI approach
+    folderCounts: async (
+        { user },
+        _allFolders = folderResolvers.allFolders,
+        _allQueries = queries.allQueries,
+        _getUserUnseenCounts = queryuser.getUserUnseenCounts
+    ) => {
         try {
             // Fetch all the folders and all this user's queries
-            const [allFolders, allQueries] = await Promise.all([
-                folderResolvers.allFolders(),
-                queries.allQueries({ query: {}, user })
+            const [allFoldersRes, allQueriesRes] = await Promise.all([
+                _allFolders(),
+                _allQueries({ query: {}, user })
             ]);
             // We need an array of the user's queries
-            const queryIds = allQueries.rows.map((row) => row.id);
+            const queryIds = allQueriesRes.rows.map((row) => row.id);
             // Get the unseen counts for all of the user's queries
-            const unseenCounts = await queryuser.getUserUnseenCounts({
+            const unseenCounts = await _getUserUnseenCounts({
                 query_ids: queryIds,
                 user_id: user.id
             });
@@ -43,17 +53,17 @@ const folderResolvers = {
             );
             const result = {
                 UNREAD: queriesWithUnseen.length,
-                ALL_QUERIES: allQueries.rowCount - queriesWithUnseen.length
+                ALL_QUERIES: allQueriesRes.rowCount - queriesWithUnseen.length
             };
-            allFolders.rows.forEach((folder) => {
-                const hasOccurences = allQueries.rows.filter(
+            allFoldersRes.rows.forEach((folder) => {
+                const hasOccurences = allQueriesRes.rows.filter(
                     (query) => query.folder === folder.code
                 ).length;
                 result[folder.id] = hasOccurences;
             });
             return Promise.resolve(result);
         } catch (err) {
-            Promise.reject(err);
+            return Promise.reject(err);
         }
     }
 };

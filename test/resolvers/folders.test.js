@@ -77,4 +77,60 @@ describe('Folders', () => {
             done();
         });
     });
+    describe('folderCounts', () => {
+        const mockedFn = jest.fn(() =>
+            new Promise((resolve) => {
+                return resolve({
+                    rows: [
+                        { id: 1, unseen_count: 2, folder: 2, code: 2 },
+                        { id: 2, unseen_count: 0, folder: 1, code: 1 },
+                        { id: 3, unseen_count: 1, folder: 3, code: 3 }
+                    ],
+                    rowCount: 3
+                });
+            })
+        );
+        it(
+            'allFolders, allQueries & getUserUnseenCounts should be called',
+            async (done) => {
+                await folders.folderCounts(
+                    { user: { id: 1 } },
+                    mockedFn,
+                    mockedFn,
+                    mockedFn
+                );
+                expect(mockedFn).toHaveBeenCalledTimes(3);
+                done();
+            }
+        );
+        it(
+            'should return the correct result',
+            async (done) => {
+                const result = await folders.folderCounts(
+                    { user: { id: 1 } },
+                    mockedFn,
+                    mockedFn,
+                    mockedFn
+                );
+                expect(result).toEqual({
+                    '1': 1,
+                    '2': 1,
+                    '3': 1,
+                    'ALL_QUERIES': 1,
+                    'UNREAD': 2
+                });
+                done();
+            }
+        );
+        it(
+            'should throw in the event of an error',
+            async (done) => {
+                await expect(folders.folderCounts({
+                    user: { id: 1 }
+                })).rejects.toBeTruthy();
+                done();
+            }
+        );
+
+    });
 });

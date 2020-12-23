@@ -4,7 +4,6 @@ const encryption = {
     encrypt: async (toEncrypt) => {
         await _sodium.ready;
         const sodium = _sodium;
-
         // Get the key
         const key = sodium.from_base64(process.env.KEY);
 
@@ -25,10 +24,6 @@ const encryption = {
         const sodium = _sodium;
         const key = sodium.from_base64(process.env.KEY);
         toDecryptWithNonce = sodium.from_base64(toDecryptWithNonce);
-
-        if (toDecryptWithNonce.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
-            throw 'Invalid cyphertext and/or nonce';
-        }
 
         const nonce = toDecryptWithNonce.slice(0, sodium.crypto_secretbox_NONCEBYTES);
         const ciphertext = toDecryptWithNonce.slice(sodium.crypto_secretbox_NONCEBYTES);

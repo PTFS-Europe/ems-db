@@ -19,11 +19,28 @@ const queryuserResolvers = {
             'SELECT query_id, most_recent_seen FROM queryuser WHERE user_id = $1',
             [id]
         ),
-    calculateUnseenCount: async ({ query_id, user_id, mostRecentSeen }) => {
-        const unseen = await pool.query(
+    getUnseenCounts: async ({ query_id, user_id, mostRecentSeen }) => {
+        return await pool.query(
             'SELECT count(*) AS rowcount FROM message WHERE query_id  = $1 AND creator_id != $2 AND id > $3',
             [query_id, user_id, mostRecentSeen]
         );
+    },
+    // If we're being tested, the testing function will pass in a mocked
+    // version of getUnseenCounts so we accept that, or fall back to the
+    // real ones if they are not passed
+    // See https://github.com/magicmark/jest-how-do-i-mock-x/blob/master/src/function-in-same-module/README.md
+    // for details on this DI approach
+    calculateUnseenCount: async ({
+        query_id,
+        user_id,
+        mostRecentSeen,
+        _getUnseenCounts = queryuserResolvers.getUnseenCounts
+    }) => {
+        const unseen = await _getUnseenCounts({
+            query_id,
+            user_id,
+            mostRecentSeen
+        });
         return pool.query(
             'UPDATE queryuser SET unseen_count = $1 WHERE query_id = $2 AND user_id = $3 RETURNING *',
             [unseen.rows[0].rowcount, query_id, user_id]
@@ -39,10 +56,19 @@ const queryuserResolvers = {
     },
     // Upsert queryuser rows for a  given query for all users except
     // the passed one
-    upsertQueryUsers: async ({ query_id, creator }) => {
+    // If we're being tested, the testing function will pass in a mocked
+    // version of associated so we accept that, or fall back to the
+    // real ones if they are not passed
+    // See https://github.com/magicmark/jest-how-do-i-mock-x/blob/master/src/function-in-same-module/README.md
+    // for details on this DI approach
+    upsertQueryUsers: async ({
+        query_id,
+        creator,
+        _associated = queries.associated
+    }) => {
         // Determine who needs adding / updating. This needs to be anyone
         // who can see this query, i.e. participants & STAFF, except the sender
-        const users = await queries.associated([query_id]);
+        const users = await _associated([query_id]);
         // Remove the sender from the list of users needing
         // creating / updating
         const creatorIdx = users.findIndex(u => u === creator);
@@ -85,14 +111,23 @@ const queryuserResolvers = {
     },
     // Following the deletion of a message, decrement the unseen_count
     // of the appropriate users
-    decrementMessageDelete: async ({ message }) => {
-        const toDecrement = await queryuserResolvers.getUsersToDecrement({
+    // If we're being tested, the testing function will pass in a mocked
+    // version of getUsersToDecrement & decrementUnseenCount
+    // so we accept those, or fall back to the real ones if they are not passed
+    // See https://github.com/magicmark/jest-how-do-i-mock-x/blob/master/src/function-in-same-module/README.md
+    // for details on this DI approach
+    decrementMessageDelete: async ({
+        message,
+        _getUsersToDecrement = queryuserResolvers.getUsersToDecrement,
+        _decrementUnseenCount = queryuserResolvers.decrementUnseenCount
+    }) => {
+        const toDecrement = await _getUsersToDecrement({
             query_id: message.query_id,
             exclude: [message.creator_id],
             most_recent_seen: message.id
         });
         for (let i = 0; i < toDecrement.length; i++) {
-            queryuserResolvers.decrementUnseenCount({
+            _decrementUnseenCount({
                 query_id: message.query_id,
                 user_id: toDecrement[i]
             });
@@ -101,9 +136,19 @@ const queryuserResolvers = {
     // Given a query_id and (optional) exclude list and (optional)
     // most_recent_seen value, return the IDs of users to have their
     // unseen_count decremented
-    getUsersToDecrement: async ({ query_id, exclude, most_recent_seen }) => {
+    // If we're being tested, the testing function will pass in a mocked
+    // version of getParticipantCounts, so we accept that,
+    // or fall back to the real ones if they are not passed
+    // See https://github.com/magicmark/jest-how-do-i-mock-x/blob/master/src/function-in-same-module/README.md
+    // for details on this DI approach
+    getUsersToDecrement: async ({
+        query_id,
+        exclude,
+        most_recent_seen,
+        _getParticipantCounts = queryuserResolvers.getParticipantCounts
+    }) => {
         // Get all users involved in this query
-        const toDecrement = await queryuserResolvers.getParticipantCounts(
+        const toDecrement = await _getParticipantCounts(
             { query_id }
         );
         return toDecrement.rows
@@ -128,12 +173,12 @@ const queryuserResolvers = {
             const placeholders = query_ids
                 .map((param, idx) => `$${idx + 1}`)
                 .join(', ');
-            optionalIn = `query_id IN (${placeholders}) AND`;
+            optionalIn = `query_id IN (${placeholders}) AND `;
             parameters = [...query_ids];
         }
         parameters.push(user_id);
         return pool.query(
-            `SELECT query_id, unseen_count FROM queryuser WHERE ${optionalIn} user_id = $${parameters.length}`,
+            `SELECT query_id, unseen_count FROM queryuser WHERE ${optionalIn}user_id = $${parameters.length}`,
             parameters
         );
     },

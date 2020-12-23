@@ -4,6 +4,7 @@ const users = require('../../resolvers/users');
 // The modules that users.js depends on (which we're about to mock)
 const pool = require('../../config');
 const roleResolvers = require('../../resolvers/roles');
+const encryption = require('../../helpers/encryption');
 
 // Mock pool
 jest.mock('../../config', () => ({
@@ -16,14 +17,9 @@ jest.mock('../../config', () => ({
     )
 }));
 
-// Mock roleResolvers
-jest.mock('../../resolvers/roles', () => ({
-    getRoleByCode: jest.fn(
-        () =>
-            new Promise((resolve) =>
-                resolve({ rowCount: 1, rows: [{ id: 1 }] })
-            )
-    )
+// Mock encryption
+jest.mock('../../helpers/encryption', () => ({
+    decrypt: jest.fn(() => 'decrypted')
 }));
 
 describe('Users', () => {
@@ -84,6 +80,13 @@ describe('Users', () => {
             done();
         });
     });
+    describe('getUserEmail', () => {
+        it('should call decrypt', async (done) => {
+            await users.getUserEmail();
+            expect(encryption.decrypt).toHaveBeenCalled();
+            done();
+        });
+    });
     describe('getUserByProvider', () => {
         it('should be called', (done) => {
             users.getUserByProvider({
@@ -134,60 +137,162 @@ describe('Users', () => {
             done();
         });
         it('should be called as an INSERT when ID is not passed', async (done) => {
+            const stormy = {
+                name: 'Stormtrooper',
+                role_id: 1,
+                provider: 'Imperial Navy',
+                provider_id: 'TK-421',
+                provider_meta: 'Terrible shot',
+                avatar: 'stormtrooper.jpg'
+            };
             await users.upsertUser({
-                body: {
-                    name: 'Stormtrooper',
-                    role_id: 1,
-                    provider: 'Imperial Navy',
-                    provider_id: 'TK-421',
-                    provider_meta: 'Terrible shot',
-                    avatar: 'stormtrooper.jpg'
+                body: stormy,
+                _getRoleByCode: jest.fn(
+                    () => Promise.resolve({ rowCount: 1, rows: [{ id: 20 }] })
+                )
+            });
+            expect(pool.query).toBeCalledWith(
+                'INSERT INTO ems_user (id, name, email, role_id, created_at, updated_at, provider, provider_id, provider_meta, avatar) VALUES (default, $1, $2, $3, NOW(), NOW(), $4, $5, $6, $7) RETURNING *',
+                [
+                    stormy.name,
+                    stormy.email,
+                    20,
+                    stormy.provider,
+                    stormy.provider_id,
+                    stormy.provider_meta,
+                    stormy.avatar
+                ]
+            );
+            jest.clearAllMocks();
+            await users.upsertUser({
+                body: stormy,
+                _getRoleByCode: jest.fn(
+                    () => Promise.resolve({ rowCount: 0, rows: [] })
+                )
+            });
+            expect(pool.query).not.toBeCalled();
+            done();
+        });
+    });
+    describe('upsertUserByProviderId', () => {
+        let sheev = {};
+        let mocks = {};
+        beforeEach(() => {
+            sheev = {
+                id: 66,
+                role_id: 99,
+                name: 'Sheev Palpatine',
+                provider: 'Imperial Navy',
+                providerId: 50,
+                providerMeta: {},
+                email: 'sheev@thedarkside.com',
+                avatar: 'https://i.kym-cdn.com/entries/icons/original/000/019/930/1421657233490.jpg'
+            };
+            mocks = {
+                upsertUser: jest.fn(() =>
+                    new Promise((resolve) => resolve())
+                ),
+                getUserByProviderExist: jest.fn(() =>
+                    Promise.resolve({
+                        rowCount: 1,
+                        rows: [{
+                            id: sheev.id,
+                            role_id: sheev.role_id,
+                            provider_id: sheev.providerId
+                        }]
+                    })
+                ),
+                getUserByProviderNoExist: jest.fn(() =>
+                    Promise.resolve({
+                        rowCount: 0,
+                        rows: []
+                    })
+                ),
+                getUserByProviderError: jest.fn(() => Promise.reject('fail')),
+                encryption: {
+                    encrypt: jest.fn((passed) => Promise.resolve(passed))
+                }
+            };
+        });
+        it('should not call encrypt if no email passed', async (done) => {
+            const incognitoSheev = {
+                ...sheev,
+                email: null
+            };
+            await users.upsertUserByProviderId({
+                ...incognitoSheev,
+                _getUserByProvider: mocks.getUserByProviderExist,
+                _encryption: mocks.encryption,
+                _upsertUser: mocks.upsertUser
+            });
+            expect(mocks.encryption.encrypt).not.toBeCalled();
+            done();
+        });
+        it('should follow the update path', async (done) => {
+            await users.upsertUserByProviderId({
+                ...sheev,
+                _getUserByProvider: mocks.getUserByProviderExist,
+                _encryption: mocks.encryption,
+                _upsertUser: mocks.upsertUser
+            });
+            expect(mocks.encryption.encrypt).toBeCalledWith(sheev.email);
+            expect(mocks.getUserByProviderExist).toBeCalledWith({
+                params: {
+                    provider: sheev.provider,
+                    providerId: sheev.providerId
                 }
             });
-            expect(roleResolvers.getRoleByCode).toBeCalledTimes(1);
-            expect(pool.query).toBeCalledTimes(1);
-            done();
-        });
-    });
-    /*
-    TODO:
-    Testing nested calls is much harder than it looks, really need to 
-    revisit this
-    describe('upsertUserByProviderId', () => {
-        // Mock roleResolvers
-        jest.mock('../../resolvers/users', () => ({
-            upsertUser: jest.fn((sql, params) =>
-                new Promise((resolve) => resolve())
-            ),
-            getUserByProvider: jest.fn((sql, params) => 
-                new Promise(
-                    (resolve) => resolve({rowCount: 1, rows: [{id: 1}]})
-                )
-            )
-        }));
-        it('should follow the update path', async (done) => {
-            const result = await users.upsertUserByProviderId({
-                name: 'Sheev Palpatine',
-                provider: 'Imperial Navy',
-                providerId: 1
+            expect(mocks.upsertUser).toBeCalledWith({
+                params: {
+                    id: sheev.id
+                },
+                body: {
+                    name: sheev.name,
+                    email: sheev.email,
+                    role_id: sheev.role_id,
+                    provider_meta: sheev.providerMeta,
+                    avatar: sheev.avatar,
+                    provider_id: sheev.providerId
+                }
             });
-            expect(users.upsertUser).toBeCalled();
             done();
         });
-        it('should follow the create path', async (done) => {
-            pool.query.mockImplementationOnce(() =>
-                new Promise((resolve) => resolve({ rowCount: 0, rows: [] })));
+        it('should follow the insert path', async (done) => {
             await users.upsertUserByProviderId({
-                name: 'Sheev Palpatine',
-                provider: 'Imperial Navy',
-                providerId: 1
+                ...sheev,
+                _getUserByProvider: mocks.getUserByProviderNoExist,
+                _encryption: mocks.encryption,
+                _upsertUser: mocks.upsertUser
             });
-            expect(users.getUserByProvider).toBeCalled();
-            expect(users.upsertUser).toBeCalledWith();
+            expect(mocks.getUserByProviderNoExist).toBeCalledWith({
+                params: {
+                    provider: sheev.provider,
+                    providerId: sheev.providerId
+                }
+            });
+            expect(mocks.upsertUser).toBeCalledWith({
+                body: {
+                    name: sheev.name,
+                    email: sheev.email,
+                    provider: sheev.provider,
+                    provider_id: sheev.providerId,
+                    provider_meta: sheev.providerMeta,
+                    avatar: sheev.avatar
+                }
+            });
+            done();
+        });
+        it('should catch errors', async (done) => {
+            const result = await users.upsertUserByProviderId({
+                ...sheev,
+                _getUserByProvider: mocks.getUserByProviderError,
+                _encryption: mocks.encryption,
+                _upsertUser: mocks.upsertUser
+            });
+            expect(result).toEqual('fail');
             done();
         });
     });
-    */
     describe('deleteUser', () => {
         it('should be called', (done) => {
             users.deleteUser({ params: { id: 1 } });

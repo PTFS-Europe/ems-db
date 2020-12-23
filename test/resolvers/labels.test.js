@@ -29,6 +29,21 @@ describe('Labels', () => {
             done();
         });
     });
+    describe('getLabel', () => {
+        // Make the call
+        labels.getLabel({ params: { id: 1 }});
+        it('should be called', (done) => {
+            expect(pool.query).toHaveBeenCalled();
+            done();
+        });
+        it('should be passed correct SQL', (done) => {
+            expect(pool.query).toBeCalledWith(
+                'SELECT * FROM label WHERE id = $1',
+                [1]
+            );
+            done();
+        });
+    });
     describe('upsertLabel', () => {
         // Make the call *with an ID*
         labels.upsertLabel({
@@ -77,5 +92,55 @@ describe('Labels', () => {
             );
             done();
         });
+    });
+    describe('labelCounts', () => {
+        const mockedFn = jest.fn(() =>
+            new Promise((resolve) => {
+                return resolve({
+                    rows: [
+                        { id: 1, label_id: 2 },
+                        { id: 2, label_id: 3 },
+                        { id: 3, label_id: 1 }
+                    ],
+                    rowCount: 3
+                });
+            })
+        );
+        it(
+            'allLabels, allQueries & allLabelsForQueries should be called',
+            async (done) => {
+                await labels.labelCounts(
+                    { user: { id: 1 } },
+                    mockedFn,
+                    mockedFn,
+                    mockedFn
+                );
+                expect(mockedFn).toHaveBeenCalledTimes(3);
+                done();
+            }
+        );
+        it('should return the correct result', async (done) => {
+            const result = await labels.labelCounts(
+                { user: { id: 1 } },
+                mockedFn,
+                mockedFn,
+                mockedFn
+            );
+            expect(result).toEqual({
+                '1': 1,
+                '2': 1,
+                '3': 1
+            });
+            done();
+        });
+        it(
+            'should throw in the event of an error',
+            async (done) => {
+                await expect(labels.labelCounts({
+                    user: { id: 1 }
+                })).rejects.toBeTruthy();
+                done();
+            }
+        );
     });
 });

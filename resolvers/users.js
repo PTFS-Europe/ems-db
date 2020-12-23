@@ -43,7 +43,11 @@ const userResolvers = {
             'SELECT * FROM ems_user WHERE provider = $1 AND provider_id = $2',
             [params.provider, params.providerId]
         ),
-    upsertUser: ({ params, body }) => {
+    upsertUser: ({
+        params,
+        body,
+        _getRoleByCode = roleResolvers.getRoleByCode
+    }) => {
         // If we have an ID, we're updating
         if (params && params.id) {
             return pool.query(
@@ -59,8 +63,7 @@ const userResolvers = {
             );
         } else {
             // Give the new user the CUSTOMER role
-            return roleResolvers
-                .getRoleByCode({ params: { code: 'CUSTOMER' } })
+            return _getRoleByCode({ params: { code: 'CUSTOMER' } })
                 .then((roles) => {
                     if (roles.rowCount === 1) {
                         const role = roles.rows[0].id;
@@ -86,20 +89,22 @@ const userResolvers = {
         providerMeta,
         name,
         email,
-        avatar
+        avatar,
+        _encryption = encryption,
+        _getUserByProvider = userResolvers.getUserByProvider,
+        _upsertUser = userResolvers.upsertUser
     }) => {
         // If we've been provided with an email, we need to encrypt it
         if (email) {
-            email = await encryption.encrypt(email);
+            email = await _encryption.encrypt(email);
         }
         // Check if this user already exists
-        return userResolvers
-            .getUserByProvider({ params: { provider, providerId } })
+        return _getUserByProvider({ params: { provider, providerId } })
             .then((result) => {
                 if (result.rowCount === 1) {
                     // User exists, update them
                     const user = result.rows[0];
-                    return userResolvers.upsertUser({
+                    return _upsertUser({
                         params: {
                             id: user.id
                         },
@@ -113,7 +118,7 @@ const userResolvers = {
                         }
                     });
                 } else {
-                    return userResolvers.upsertUser({
+                    return _upsertUser({
                         body: {
                             name,
                             email,
